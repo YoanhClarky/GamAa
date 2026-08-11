@@ -8,21 +8,24 @@ Toutes les explications détaillées sont sur le site lui-même : [Documentation
 
 Aucune installation nécessaire : ouvre `index.html` dans un navigateur, ou lance un petit serveur local (ex. `python -m http.server`) pour naviguer plus confortablement.
 
-## Ajouter un jeu (en 4 étapes)
+## Ajouter un jeu (en 5 étapes)
 
 1. **Duplique le dossier modèle** [games/_template/](games/_template/) et renomme la copie avec ton nom, par exemple `games/ton-nom/`.
 2. **Renomme le fichier** `mon-jeu.html` dedans avec le nom de ton jeu, puis ouvre-le et modifie :
    - le `<title>` (le nom affiché de ton jeu),
    - les balises `<meta name="game:type">`, `game:description`, `game:dev` et `game:date`,
    - le code du jeu (CSS et JS sont dans le même fichier).
-3. **Régénère la liste des jeux** avec :
+3. **Remplis `profile.json`** dans ce même dossier : ton nom, une courte bio, tes liens (GitHub, site, réseaux). C'est ce qui alimente ta fiche sur la page Communauté du site. Laisse vide ce que tu ne veux pas partager — un champ vide n'est simplement pas affiché.
+4. **(Optionnel) Prévisualise en local** avec :
    ```
    node scripts/build-games.js
    ```
-   Ça met à jour `assets/games.js`, qui fait apparaître ton jeu sur l'accueil et sur la page Communauté. Si tu oublies cette étape, la CI GitHub Actions s'en charge automatiquement après le merge de ta pull request.
-4. **Ouvre une pull request** avec une courte description de ton jeu.
+   Ça régénère `assets/games.js` sur ta machine pour vérifier que ton jeu et ta fiche apparaissent bien. **Ne commite pas ce fichier** : c'est un registre partagé par tout le monde, généré automatiquement par la CI après le merge — le commiter toi-même provoquerait un conflit avec les autres contributions.
+5. **Ouvre une pull request qui ne touche que `games/ton-nom/`**, avec une courte description de ton jeu.
 
 Le dossier `games/_template/` (et tout dossier commençant par `_`) est ignoré par le script : ce n'est qu'un modèle, jamais un vrai jeu affiché.
+
+> Pourquoi c'est important à grande échelle : si des centaines de contributeurs committaient chacun `assets/games.js`, ce fichier deviendrait un point de conflit permanent. En le laissant uniquement à la CI, chaque PR ne touche que son propre dossier et ne peut jamais entrer en conflit avec une autre.
 
 ## Structure du repo
 
@@ -34,10 +37,12 @@ gamAa/
 │   ├── header.js                   composant d'en-tête, une seule copie pour tout le site
 │   └── games.js                    registre des jeux, généré — ne pas éditer à la main
 ├── scripts/build-games.js          lit games/ et régénère assets/games.js
-├── .github/workflows/build-games.yml   relance le script après chaque push sur main
+├── .github/workflows/
+│   ├── build-games.yml             régénère assets/games.js après chaque push sur main
+│   └── no-games-js-in-pr.yml       rejette une PR qui toucherait assets/games.js
 └── games/
-    ├── _template/                  modèle à dupliquer
-    └── ton-nom/                    un dossier par développeur, un fichier HTML par jeu
+    ├── _template/                  modèle à dupliquer (mon-jeu.html + profile.json)
+    └── ton-nom/                    un dossier par développeur : ton/tes jeu(x) + profile.json
 ```
 
 ## Règles de style

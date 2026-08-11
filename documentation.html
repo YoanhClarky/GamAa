@@ -106,12 +106,15 @@
 ├── scripts/
 │   └── build-games.js         <span class="tree-comment">// lit games/ et régénère assets/games.js</span>
 ├── .github/workflows/
-│   └── build-games.yml        <span class="tree-comment">// relance le script après chaque push sur main</span>
+│   ├── build-games.yml        <span class="tree-comment">// régénère assets/games.js après chaque push sur main</span>
+│   └── no-games-js-in-pr.yml  <span class="tree-comment">// rejette une PR qui toucherait assets/games.js</span>
 └── games/
     ├── _template/             <span class="tree-comment">// modèle à dupliquer, ignoré par le script</span>
-    │   └── mon-jeu.html
+    │   ├── mon-jeu.html
+    │   └── profile.json       <span class="tree-comment">// modèle de fiche développeur</span>
     └── ton-nom/               <span class="tree-comment">// un dossier par développeur</span>
-        └── mon-jeu.html       <span class="tree-comment">// un fichier HTML autonome par jeu</span></pre>
+        ├── mon-jeu.html       <span class="tree-comment">// un fichier HTML autonome par jeu</span>
+        └── profile.json       <span class="tree-comment">// qui tu es : nom, bio, liens</span></pre>
       </div>
 
       <div class="card">
@@ -123,7 +126,23 @@
         <h2>Ajouter un nouveau jeu</h2>
         <p>1. Duplique le dossier <code>games/_template/</code> et renomme la copie avec ton nom : <code>games/ton-nom/</code>.</p>
         <p>2. Renomme <code>mon-jeu.html</code> avec le nom de ton jeu, puis modifie le <code>&lt;title&gt;</code>, les balises <code>&lt;meta name="game:*"&gt;</code> et le code à l'intérieur. Ces informations sont ce que la liste des jeux affiche sur l'accueil.</p>
-        <p>3. Lance <code>node scripts/build-games.js</code> pour régénérer <code>assets/games.js</code> et voir ton jeu apparaître sur l'accueil et sur la page Communauté. Si tu oublies cette étape, la CI GitHub Actions s'en charge automatiquement une fois ta pull request mergée sur <code>main</code>. Le dossier <code>games/_template/</code> lui-même est toujours ignoré par le script (tout dossier commençant par <code>_</code> l'est).</p>
+        <p>3. Remplis <code>profile.json</code> dans ce même dossier : ton nom, une courte bio et tes liens (GitHub, site, réseaux). C'est ce qui apparaît sur ta fiche de la page <a href="communaute.html">Communauté</a>. Un champ vide n'est simplement pas affiché.</p>
+        <p>4. Ouvre ta pull request en ne touchant que ton dossier <code>games/ton-nom/</code>. Ne commite jamais <code>assets/games.js</code> toi-même : c'est un fichier généré, partagé par tout le monde, et le modifier dans ta PR provoquerait un conflit avec les autres contributions. Une CI GitHub Actions le régénère automatiquement dès que ta PR est mergée sur <code>main</code> — et une seconde CI rejette toute PR qui y toucherait. Tu peux quand même lancer <code>node scripts/build-games.js</code> en local juste pour vérifier l'aperçu, sans committer le résultat. Le dossier <code>games/_template/</code> lui-même est toujours ignoré par le script (tout dossier commençant par <code>_</code> l'est).</p>
+      </div>
+
+      <div class="card">
+        <h2>Le fichier profile.json</h2>
+        <p>Un seul fichier par développeur, à la racine de ton dossier <code>games/ton-nom/</code>. Facultatif — sans lui, ta fiche Communauté affiche juste le nom renseigné dans <code>game:dev</code> et la liste de tes jeux.</p>
+        <pre><code>{
+  "name": "Ton Nom",
+  "bio": "Une phrase pour te présenter.",
+  "links": {
+    "github": "https://github.com/ton-pseudo",
+    "site": "",
+    "twitter": "",
+    "linkedin": ""
+  }
+}</code></pre>
       </div>
 
       <div class="card">

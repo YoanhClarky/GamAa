@@ -1,12 +1,15 @@
 /*
-  Registre des jeux gamAa — généré automatiquement par scripts/build-games.js
-  à partir des balises <title> et <meta name="game:*"> de chaque fichier sous games/.
+  Registre des jeux et des contributeurs gamAa — généré automatiquement par
+  scripts/build-games.js à partir des fichiers sous games/ :
+  - GAMES vient des balises <title> et <meta name="game:*"> de chaque jeu.
+  - CONTRIBUTORS vient de games/<dev>/profile.json (name, bio, links).
   Ne pas modifier ce fichier à la main, il sera écrasé au prochain build.
 
   Pour ajouter un jeu : dépose ton fichier dans games/ton-nom/ avec les balises
   <meta name="game:type">, <meta name="game:description">, <meta name="game:dev">
-  et <meta name="game:date">, puis lance `node scripts/build-games.js`
-  (la CI le fait aussi automatiquement après un merge sur main).
+  et <meta name="game:date">, ajoute un profile.json si tu veux, puis lance
+  `node scripts/build-games.js` (la CI le fait aussi automatiquement après un
+  merge sur main).
 */
 var GAMES = [
   {
@@ -40,5 +43,25 @@ var GAMES = [
     "dev": "Yoanh Mantele",
     "date": "11/08/2026",
     "href": "games/yoanh-mantele/reproduis-la-forme.html"
+  }
+];
+
+var CONTRIBUTORS = [
+  {
+    "slug": "yoanh-mantele",
+    "name": "Yoanh Mantele",
+    "bio": "Full-Stack Developer building products, SaaS and developer tools. Curious about AI, software architecture and new technologies.",
+    "links": {
+      "github": "https://github.com/YoanhClarky",
+      "site": "https://mcd-creator.com",
+      "twitter": "",
+      "linkedin": "https://www.linkedin.com/in/yoanh-mantele-594a0527a/"
+    },
+    "games": [
+      "Corporate Dodger",
+      "En Route pour le Boulot",
+      "Le Délestage",
+      "Reproduis la Forme"
+    ]
   }
 ];

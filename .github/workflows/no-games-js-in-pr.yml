@@ -1,0 +1,17 @@
+name: Interdit assets/games.js dans une pull request
+
+on:
+  pull_request:
+    paths:
+      - "assets/games.js"
+
+jobs:
+  block:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse la PR
+        run: |
+          echo "assets/games.js est généré automatiquement par la CI après le merge sur main."
+          echo "Retire-le de ta pull request : git checkout origin/main -- assets/games.js"
+          echo "Ta PR ne doit contenir que ton dossier games/ton-nom/."
+          exit 1

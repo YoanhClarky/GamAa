@@ -52,9 +52,30 @@
       font-size: 0.95rem;
     }
 
-    .contributor-card span {
+    .contributor-card .contributor-games {
+      display: block;
       color: var(--muted);
       font-size: 0.85rem;
+      margin-top: 2px;
+    }
+
+    .contributor-card .contributor-bio {
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    .contributor-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      margin-top: 8px;
+    }
+
+    .contributor-links a {
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration-color: var(--amber);
     }
   </style>
 </head>
@@ -104,19 +125,29 @@
 
   <script src="assets/games.js"></script>
   <script>
-    const contributors = {};
-    GAMES.forEach((game) => {
-      if (!contributors[game.dev]) contributors[game.dev] = [];
-      contributors[game.dev].push(game.title);
-    });
+    const LINK_LABELS = {
+      github: 'GitHub',
+      site: 'Site',
+      twitter: 'Twitter/X',
+      linkedin: 'LinkedIn'
+    };
 
-    document.getElementById('contributors-grid').innerHTML = Object.entries(contributors)
-      .map(([dev, titles]) => `
-        <div class="contributor-card">
-          <strong>${dev}</strong>
-          <span>${titles.join(', ')}</span>
-        </div>
-      `)
+    document.getElementById('contributors-grid').innerHTML = CONTRIBUTORS
+      .map((contributor) => {
+        const links = Object.entries(contributor.links || {})
+          .filter(([, url]) => url)
+          .map(([key, url]) => `<a href="${url}" target="_blank" rel="noopener">${LINK_LABELS[key] || key}</a>`)
+          .join('');
+
+        return `
+          <div class="contributor-card">
+            <strong>${contributor.name}</strong>
+            <span class="contributor-games">${contributor.games.join(', ')}</span>
+            ${contributor.bio ? `<p class="contributor-bio">${contributor.bio}</p>` : ''}
+            ${links ? `<div class="contributor-links">${links}</div>` : ''}
+          </div>
+        `;
+      })
       .join('');
   </script>
 </body>

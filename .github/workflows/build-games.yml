@@ -16,17 +16,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - run: node scripts/build-games.js
-
-      - name: Commit assets/games.js si besoin
+      - name: Régénère et pousse assets/games.js (avec retry si un autre merge arrive en même temps)
         run: |
           git config user.name "gamAa-bot"
           git config user.email "actions@github.com"
-          git add assets/games.js
-          git diff --cached --quiet || git commit -m "chore: régénère assets/games.js"
-          git push
+
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+
+            node scripts/build-games.js
+            git add assets/games.js
+
+            if git diff --cached --quiet; then
+              echo "assets/games.js déjà à jour."
+              exit 0
+            fi
+
+            git commit -m "chore: régénère assets/games.js"
+
+            if git push origin HEAD:main; then
+              echo "Poussé avec succès."
+              exit 0
+            fi
+
+            echo "Push refusé (un autre merge a dû arriver entre-temps), nouvel essai ($attempt/5)..."
+            sleep $((RANDOM % 5 + 1))
+          done
+
+          echo "Échec après plusieurs tentatives." >&2
+          exit 1
