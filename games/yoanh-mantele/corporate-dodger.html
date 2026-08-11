@@ -476,8 +476,10 @@
     document.getElementById('signInBtn').addEventListener('click', async () => {
       const email = document.getElementById('authEmail').value.trim();
       if (!email) return;
-      await Leaderboard.signInWithEmail(email);
-      authBox.innerHTML = '<span>Vérifie ta boîte mail pour le lien de connexion.</span>';
+      const result = await Leaderboard.signInWithEmail(email);
+      authBox.innerHTML = result.success
+        ? '<span>Vérifie ta boîte mail pour le lien de connexion.</span>'
+        : `<span>${result.message}</span>`;
     });
   }
 

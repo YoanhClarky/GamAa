@@ -10,7 +10,7 @@
   Expose ensuite window.Leaderboard avec :
   - getCurrentUser() -> Promise<user|null>
   - onAuthChange(callback)
-  - signInWithEmail(email) -> Promise (envoie un lien magique)
+  - signInWithEmail(email) -> Promise<{success, message?}> (envoie un lien magique)
   - signOut() -> Promise
   - submitScore(gameSlug, playerName, score) -> Promise<boolean>
   - getTopScores(gameSlug, limit) -> Promise<Array<{player_name, score}>>
@@ -47,11 +47,25 @@
     });
   }
 
-  function signInWithEmail(email) {
-    return getClient().auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.href }
-    });
+  async function signInWithEmail(email) {
+    try {
+      const { error } = await getClient().auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.href }
+      });
+
+      if (error) {
+        console.warn('Leaderboard: connexion impossible.', error.message);
+        const message = /rate limit/i.test(error.message)
+          ? 'Trop de tentatives de connexion pour le moment, réessaie dans quelques minutes.'
+          : "La connexion n'a pas fonctionné, réessaie plus tard.";
+        return { success: false, message };
+      }
+      return { success: true };
+    } catch (err) {
+      console.warn('Leaderboard: connexion impossible (réseau/config).', err.message);
+      return { success: false, message: "La connexion n'a pas fonctionné, réessaie plus tard." };
+    }
   }
 
   function signOut() {
