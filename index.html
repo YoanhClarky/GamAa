@@ -67,95 +67,234 @@
       font-weight: 600;
     }
 
-    .table-shell {
-      width: 100%;
-      background: #fcfdff;
+    .tech-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .tech-stack-label {
+      margin: 0;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: var(--amber-soft);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-align: center;
+      max-width: 220px;
+    }
+
+    .games-toolbar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .games-search,
+    .games-filter {
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: #ffffff;
       border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 14px 35px rgba(28, 43, 57, 0.06);
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+
+    .games-search {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .games-filter {
+      min-width: 160px;
+      cursor: pointer;
+    }
+
+    .games-search:focus,
+    .games-filter:focus {
+      outline: none;
+      border-color: var(--amber);
+    }
+
+    .games-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 20px;
+      font-size: 0.95rem;
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
       margin-top: 12px;
     }
 
-    .table-head,
-    .table-row {
-      display: grid;
-      grid-template-columns: 0.8fr 3fr 1.7fr 1.7fr 1.4fr;
-      gap: 0;
-      align-items: center;
-      padding: 16px 20px;
-    }
-
-    .table-head {
-      background: #f4f5f7;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-size: 0.78rem;
-      font-weight: 700;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .table-row {
-      background: #ffffff;
-      border-bottom: 1px solid var(--border);
-      transition: background 0.15s ease, transform 0.15s ease;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .table-row:last-child {
-      border-bottom: none;
-    }
-
-    .table-row:hover {
-      background: #f7f8fa;
-      transform: translateY(-1px);
-    }
-
-    .table-cell {
+    .game-card {
+      background: #fcfdff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      font-size: 0.95rem;
-      color: var(--text);
+      min-width: 0;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
 
-    .row-title {
+    .game-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--amber);
+      box-shadow: 0 10px 25px rgba(28, 43, 57, 0.12);
+    }
+
+    .game-card-top {
+      background: var(--text);
+      min-height: 100px;
+      padding: 18px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .game-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--amber);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .game-type-badge {
+      color: #ffffff;
+      font-size: 11px;
       font-weight: 700;
-      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      opacity: 0.85;
+    }
+
+    .game-content {
+      padding: 17px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .game-title {
+      font-size: 1.05rem;
+      line-height: 1.25;
+      color: var(--text);
+      margin: 0 0 7px;
+      font-weight: 700;
+    }
+
+    .game-description {
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      flex: 1;
+    }
+
+    .game-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 13px;
+      border-top: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+
+    .game-dev {
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .game-date {
+      color: var(--muted);
+      font-size: 0.72rem;
+      white-space: nowrap;
+    }
+
+    .game-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 42px;
+      border-radius: 9px;
+      background: var(--amber);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 800;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .game-button:hover {
+      background: var(--text);
+      color: #ffffff;
+    }
+
+    .game-button span {
+      margin-left: 6px;
       font-size: 1rem;
     }
 
-    .row-subtitle {
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin: 4px 0 0;
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 24px;
     }
 
-    .row-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      overflow: hidden;
-      display: grid;
-      place-items: center;
-      background: var(--amber-soft);
-    }
-
-    .row-icon img {
-      width: 24px;
-      height: 24px;
-      object-fit: contain;
-    }
-
-    .row-link {
-      justify-self: end;
+    .page-btn {
+      min-width: 36px;
+      height: 36px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #ffffff;
       color: var(--text);
       font-weight: 600;
-      font-size: 0.92rem;
-      display: inline-flex;
-      align-items: center;
+      font-size: 0.9rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      border-color: var(--amber);
+    }
+
+    .page-btn.active {
+      background: var(--amber);
+      border-color: var(--amber);
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     .cta {
@@ -186,24 +325,15 @@
 
     @media (max-width: 900px) {
       .hero { flex-direction: column; align-items: flex-start; }
-      .table-head,
-      .table-row {
-        grid-template-columns: 1fr;
-        padding: 14px 18px;
-      }
-      .table-head {
-        display: none;
-      }
-      .row-link {
-        justify-self: start;
-      }
-      .table-shell {
-        border-radius: 18px;
-      }
+      .games-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
     @media (max-width: 800px) {
       .hero { flex-direction: column; align-items: flex-start; }
+    }
+
+    @media (max-width: 480px) {
+      .games-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -220,7 +350,10 @@
         <p class="tagline">gamAa, des mini-jeux qu'on lance en un clic, faits par tout le monde, pour tout le monde.</p>
         <p class="intro">Une seule plateforme, plusieurs mini-jeux. Chacun peut jouer, et chacun peut ajouter le sien.</p>
       </div>
-      <img class="tech-stack-img" src="assets/stack.png" alt="HTML, CSS, JavaScript" />
+      <div class="tech-stack">
+        <img class="tech-stack-img" src="assets/stack.png" alt="HTML, CSS, JavaScript" />
+        <p class="tech-stack-label">Jeux 100% HTML, CSS &amp; JS — sans framework</p>
+      </div>
     </section>
 
     <p class="section-lead">Choisis un jeu et joue en 10 secondes.</p>
@@ -231,16 +364,13 @@
       <span class="step">3. Explorer</span>
     </div>
 
-    <div class="table-shell">
-      <div class="table-head">
-        <div>Game</div>
-        <div>Nom</div>
-        <div>Type</div>
-        <div>Développeur</div>
-        <div>Dernière mise à jour</div>
-      </div>
-      <div id="games-grid"></div>
+    <div class="games-toolbar">
+      <input type="search" id="games-search" class="games-search" placeholder="Rechercher un jeu ou un développeur..." aria-label="Rechercher un jeu" />
+      <select id="games-filter" class="games-filter" aria-label="Filtrer par type"></select>
     </div>
+
+    <div class="games-grid" id="games-grid"></div>
+    <div class="pagination" id="games-pagination"></div>
 
     <section class="cta">
       <p>Envie d'en savoir plus sur gamAa, ou d'ajouter ton propre jeu à la plateforme ?</p>
@@ -254,22 +384,112 @@
 
   <script src="assets/games.js"></script>
   <script>
-    const grid = document.getElementById('games-grid');
+    const PAGE_SIZE = 8;
+    let currentPage = 1;
+    let searchQuery = '';
+    let selectedType = 'all';
 
-    grid.innerHTML = GAMES
-      .map((game) => `
-        <a class="table-row" href="${game.href}">
-          <div class="row-icon"><img src="assets/icon.png" alt="Icon jeu" /></div>
-          <div class="table-cell">
-            <div class="row-title">${game.title}</div>
-            <div class="row-subtitle">${game.description}</div>
-          </div>
-          <div class="table-cell">${game.type}</div>
-          <div class="table-cell">${game.dev}</div>
-          <div class="table-cell row-link">${game.date}</div>
-        </a>
-      `)
-      .join('');
+    const grid = document.getElementById('games-grid');
+    const pagination = document.getElementById('games-pagination');
+    const searchInput = document.getElementById('games-search');
+    const filterSelect = document.getElementById('games-filter');
+
+    function initials(title) {
+      const words = title.trim().split(/\s+/);
+      if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+
+    function normalize(str) {
+      return str.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    }
+
+    function populateFilter() {
+      const types = Array.from(new Set(GAMES.map((game) => game.type))).sort();
+      filterSelect.innerHTML =
+        '<option value="all">Tous les types</option>' +
+        types.map((type) => `<option value="${type}">${type}</option>`).join('');
+    }
+
+    function getFilteredGames() {
+      return GAMES.filter((game) => {
+        const matchesType = selectedType === 'all' || game.type === selectedType;
+        const matchesSearch =
+          !searchQuery ||
+          normalize(game.title).includes(searchQuery) ||
+          normalize(game.dev).includes(searchQuery);
+        return matchesType && matchesSearch;
+      });
+    }
+
+    function renderGames() {
+      const filtered = getFilteredGames();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+      currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const pageGames = filtered.slice(start, start + PAGE_SIZE);
+
+      grid.innerHTML = pageGames.length
+        ? pageGames
+            .map((game) => `
+              <article class="game-card">
+                <div class="game-card-top">
+                  <div class="game-icon">${initials(game.title)}</div>
+                  <span class="game-type-badge">${game.type}</span>
+                </div>
+                <div class="game-content">
+                  <h2 class="game-title">${game.title}</h2>
+                  <p class="game-description">${game.description}</p>
+                  <div class="game-meta">
+                    <span class="game-dev">${game.dev}</span>
+                    <span class="game-date">${game.date}</span>
+                  </div>
+                  <a href="${game.href}" class="game-button">Jouer <span>→</span></a>
+                </div>
+              </article>
+            `)
+            .join('')
+        : '<p class="games-empty">Aucun jeu ne correspond à ta recherche.</p>';
+
+      renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+      if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+      }
+
+      let buttons = `<button class="page-btn" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''} aria-label="Page précédente">&larr;</button>`;
+      for (let i = 1; i <= totalPages; i++) {
+        buttons += `<button class="page-btn${i === currentPage ? ' active' : ''}" data-page="${i}">${i}</button>`;
+      }
+      buttons += `<button class="page-btn" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''} aria-label="Page suivante">&rarr;</button>`;
+
+      pagination.innerHTML = buttons;
+    }
+
+    pagination.addEventListener('click', (event) => {
+      const button = event.target.closest('.page-btn');
+      if (!button || button.disabled) return;
+      currentPage = Number(button.dataset.page);
+      renderGames();
+    });
+
+    searchInput.addEventListener('input', (event) => {
+      searchQuery = normalize(event.target.value.trim());
+      currentPage = 1;
+      renderGames();
+    });
+
+    filterSelect.addEventListener('change', (event) => {
+      selectedType = event.target.value;
+      currentPage = 1;
+      renderGames();
+    });
+
+    populateFilter();
+    renderGames();
   </script>
 </body>
 </html>

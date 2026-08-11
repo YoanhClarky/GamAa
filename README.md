@@ -52,3 +52,7 @@ gamAa/
 - Un jeu = un fichier HTML autonome (CSS et JS inclus), adapté au mobile.
 
 Voir [Documentation](documentation.html) pour le détail complet.
+
+## Licence
+
+Ce projet est sous licence [GPL-3.0](LICENSE). Concrètement : n'importe qui peut utiliser, copier et modifier le code, mais toute version redistribuée (modifiée ou non) doit rester open-source sous cette même licence — personne ne peut forker gamAa pour en faire un produit fermé ou propriétaire. En ouvrant une pull request, tu acceptes que ta contribution (jeu, code, documentation) soit publiée sous cette même licence.
