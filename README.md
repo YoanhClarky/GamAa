@@ -37,6 +37,7 @@ Pour que ça fonctionne (sinon les jeux restent jouables, juste sans classement)
 1. Crée un projet gratuit sur [supabase.com](https://supabase.com).
 2. Exécute [supabase/schema.sql](supabase/schema.sql) dans l'éditeur SQL du projet.
 3. Renseigne `SUPABASE_URL` et `SUPABASE_ANON_KEY` dans [assets/supabase-config.js](assets/supabase-config.js) (valeurs dans Project Settings > API).
+4. Dans Authentication > URL Configuration, mets le **Site URL** sur l'adresse réelle du site déployé (ex. `https://ton-site.vercel.app`) et ajoute-la aux **Redirect URLs** avec un joker (`https://ton-site.vercel.app/**`), sinon le lien magique par email redirige au mauvais endroit.
 
 Détails dans [Documentation](documentation.html).
 

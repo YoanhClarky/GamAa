@@ -48,7 +48,10 @@
   }
 
   function signInWithEmail(email) {
-    return getClient().auth.signInWithOtp({ email });
+    return getClient().auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.href }
+    });
   }
 
   function signOut() {

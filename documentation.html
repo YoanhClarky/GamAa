@@ -158,6 +158,7 @@
         <p>1. Crée un projet gratuit sur <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>.</p>
         <p>2. Dans l'éditeur SQL du projet, exécute le contenu de <code>supabase/schema.sql</code> (crée la table <code>scores</code> et ses règles d'accès).</p>
         <p>3. Dans <code>assets/supabase-config.js</code>, remplace <code>SUPABASE_URL</code> et <code>SUPABASE_ANON_KEY</code> par les valeurs de Project Settings &gt; API. La clé "anon" est faite pour être publique côté client, ce n'est pas un secret.</p>
+        <p>4. Dans Authentication &gt; URL Configuration, renseigne le <strong>Site URL</strong> avec l'adresse réelle du site déployé (ex. <code>https://ton-site.vercel.app</code>) et ajoute-la aussi aux <strong>Redirect URLs</strong> avec un joker (ex. <code>https://ton-site.vercel.app/**</code>) pour couvrir toutes les pages de jeux. Sans ça, le lien magique envoyé par email redirige vers une mauvaise adresse et la connexion échoue.</p>
         <p>Tant que ce fichier garde ses valeurs par défaut, les jeux restent jouables normalement : seul le classement est indisponible (erreur silencieuse en console).</p>
         <pre><code>// assets/leaderboard.js expose :
 Leaderboard.getCurrentUser()                  // -> Promise&lt;user | null&gt;
