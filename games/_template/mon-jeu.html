@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../assets/icon.png">
+<meta name="game:type" content="Arcade">
+<meta name="game:description" content="Une phrase courte qui donne envie de jouer.">
+<meta name="game:dev" content="Ton Nom">
+<meta name="game:date" content="JJ/MM/AAAA">
+<title>Nom du jeu</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: #1c2b39;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+    font-weight: 700;
+  }
+  .subtitle {
+    opacity: 0.85;
+    font-size: 0.9rem;
+    margin-bottom: 14px;
+    text-align: center;
+    padding: 0 20px;
+    max-width: 380px;
+  }
+  #gameWrap {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 3px solid #fff;
+    background: #ffffff;
+  }
+  canvas {
+    display: block;
+    touch-action: none;
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: #1c2b39;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    gap: 10px;
+  }
+  #overlay h2 { font-size: 1.4rem; }
+  #overlay p { opacity: 0.9; max-width: 300px; font-size: 0.9rem; line-height: 1.4; }
+  button {
+    margin-top: 10px;
+    background: #f4b400;
+    color: #1c2b39;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  button:active { transform: scale(0.95); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<h1>Nom du jeu</h1>
+<p class="subtitle">Une phrase qui explique le principe du jeu en une ligne.</p>
+
+<div id="gameWrap">
+  <canvas id="game" width="360" height="540"></canvas>
+  <div id="overlay">
+    <h2 id="overlayTitle">Prêt à jouer ?</h2>
+    <p id="overlayText">Explique ici le but du jeu et les contrôles.</p>
+    <button id="startBtn">Commencer</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const startBtn = document.getElementById('startBtn');
+
+  let running = false;
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#1c2b39';
+    ctx.font = 'bold 16px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Ton jeu commence ici', W / 2, H / 2);
+  }
+
+  function update() {
+    // logique du jeu à chaque frame
+  }
+
+  let rafId;
+  function loop() {
+    if (!running) return;
+    update();
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function startGame() {
+    overlay.classList.add('hidden');
+    running = true;
+    loop();
+  }
+
+  startBtn.addEventListener('click', startGame);
+
+  draw();
+})();
+</script>
+
+</body>
+</html>

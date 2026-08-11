@@ -1,0 +1,32 @@
+name: Build games registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "games/**"
+      - "scripts/build-games.js"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: node scripts/build-games.js
+
+      - name: Commit assets/games.js si besoin
+        run: |
+          git config user.name "gamAa-bot"
+          git config user.email "actions@github.com"
+          git add assets/games.js
+          git diff --cached --quiet || git commit -m "chore: régénère assets/games.js"
+          git push

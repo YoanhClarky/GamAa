@@ -3,132 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="assets/icon.png" />
+  <link rel="stylesheet" href="assets/site.css" />
   <title>Roadmap - gamAa</title>
   <style>
-    :root {
-      --bg: #f6f7f9;
-      --panel: #ffffff;
-      --text: #1c2b39;
-      --muted: #5b6b78;
-      --border: #e3e6ea;
-      --accent: #1c2b39;
-      --amber: #f4b400;
-      --amber-soft: #fff4d6;
-      --shadow: 0 18px 50px rgba(28, 43, 57, 0.1);
-    }
-
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Roboto, Arial, sans-serif;
-      background: linear-gradient(135deg, #f8f9fb 0%, #eef0f3 100%);
-      color: var(--text);
-      min-height: 100vh;
-    }
-
-    .page-shell {
-      width: 100%;
-      padding: 24px;
-      padding-top: 104px;
-      display: flex;
-      justify-content: center;
-      background: linear-gradient(135deg, #f8f9fb 0%, #eef0f3 100%);
-    }
-
-    .shell {
-      width: 100%;
-      max-width: 1200px;
-      min-height: calc(100vh - 104px);
-      background: var(--panel);
-      border: 2px solid var(--border);
-      border-radius: 28px;
-      box-shadow: var(--shadow);
-      padding: 28px 36px 36px;
-    }
-
-    .topbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 20;
-      background: rgba(255,255,255,0.96);
-      border-bottom: 1px solid rgba(227, 230, 234, 0.9);
-      backdrop-filter: blur(14px);
-      box-shadow: 0 10px 30px rgba(28, 43, 57, 0.08);
-      padding: 18px 28px;
-    }
-
-    header {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      min-height: 90px;
-    }
-
-    .brand-row {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      flex-shrink: 0;
-    }
-
-    .brand-logo {
-      width: 128px;
-      height: 70px;
-      display: grid;
-      place-items: center;
-      background: transparent;
-      flex-shrink: 0;
-    }
-
-    .brand-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 20px;
-      align-items: center;
-      justify-content: flex-end;
-    }
-
-    nav a {
-      color: var(--muted);
-      text-decoration: none;
-      font-weight: 600;
-      white-space: nowrap;
-      padding-bottom: 4px;
-      border-bottom: 2px solid transparent;
-      transition: color 0.15s ease, border-color 0.15s ease;
-    }
-
-    nav a:hover {
-      color: var(--text);
-    }
-
-    nav a.active {
-      color: var(--text);
-      border-bottom-color: var(--amber);
-    }
-
-    .eyebrow {
-      display: inline-block;
-      margin: 0 0 8px;
-      font-size: 0.8rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
     .hero {
       margin-bottom: 8px;
       display: flex;
@@ -136,20 +14,6 @@
       justify-content: space-between;
       gap: 20px;
       flex-wrap: wrap;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 2rem;
-      color: var(--text);
-    }
-
-    p {
-      margin: 16px 0 0;
-      color: var(--muted);
-      line-height: 1.7;
-      max-width: 760px;
-      font-size: 1rem;
     }
 
     .status-badge {
@@ -161,28 +25,6 @@
       font-weight: 700;
       font-size: 0.85rem;
       white-space: nowrap;
-    }
-
-    .card {
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 24px;
-      background: #fcfdff;
-      box-shadow: 0 12px 30px rgba(28, 43, 57, 0.05);
-      margin-top: 22px;
-    }
-
-    .card h2 {
-      margin: 0 0 12px;
-      font-size: 1.2rem;
-      color: var(--text);
-    }
-
-    .card p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.75;
-      max-width: none;
     }
 
     .feature-list {
@@ -226,86 +68,11 @@
       font-weight: 600;
       font-size: 0.95rem;
     }
-
-    .actions {
-      margin-top: 28px;
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-
-    .button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px 18px;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 700;
-      color: var(--text);
-      background: var(--amber);
-      transition: filter 0.15s ease;
-    }
-
-    .button.secondary {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    .button:hover { filter: brightness(0.95); }
-    .button.secondary:hover { background: #f4f5f7; }
-
-    @media (max-width: 800px) {
-      .shell { padding: 22px; }
-    }
-
-    @media (max-width: 760px) {
-      .topbar { padding: 12px 16px; }
-      header {
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: auto;
-        gap: 10px;
-      }
-      .brand-logo {
-        width: 95px;
-        height: 52px;
-      }
-      nav {
-        width: 100%;
-        justify-content: center;
-        gap: 6px 14px;
-      }
-      nav a {
-        font-size: 0.9rem;
-      }
-      .page-shell {
-        padding-top: 168px;
-      }
-      .shell {
-        min-height: calc(100vh - 168px);
-      }
-    }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <header>
-      <div class="brand-row">
-        <div class="brand-logo"><img src="assets/logo.png" alt="gamAa logo" /></div>
-      </div>
-      <nav>
-        <a href="index.html">Accueil</a>
-        <a href="apropos.html">À propos</a>
-        <a href="contribuer.html">Contribuer</a>
-        <a href="documentation.html">Documentation</a>
-        <a class="active" href="roadmap.html">Roadmap</a>
-        <a href="communaute.html">Communauté</a>
-      </nav>
-    </header>
-  </div>
+  <div id="site-header"></div>
+  <script src="assets/header.js"></script>
 
   <div class="page-shell">
     <main class="shell">
