@@ -98,7 +98,7 @@
         <ol class="steps-list">
           <li>Fork le dépôt GitHub.</li>
           <li>Duplique le dossier <code>games/_template/</code>, renomme la copie avec ton nom (ex. <code>games/ton-nom/</code>).</li>
-          <li>Dans ce dossier, renomme <code>mon-jeu.html</code> avec le nom de ton jeu, puis modifie le <code>&lt;title&gt;</code>, les balises <code>&lt;meta name="game:*"&gt;</code> et le code du jeu, en respectant la charte graphique (voir <a href="documentation.html">Documentation</a>).</li>
+          <li>Dans ce dossier, renomme <code>mon-jeu.html</code> avec le nom de ton jeu, puis modifie le <code>&lt;title&gt;</code>, les balises <code>&lt;meta name="game:*"&gt;</code> et le code du jeu, en respectant la charte graphique (voir <a href="documentation.html">Documentation</a>). Le template inclut par défaut un classement partagé (Supabase) et une connexion facultative : c'est optionnel, tu peux le retirer si tu n'en veux pas, ce n'est pas une condition pour être accepté.</li>
           <li>Remplis aussi <code>profile.json</code> dans ton dossier (nom, courte bio, liens GitHub / site / réseaux) : c'est ce qui alimente ta fiche sur la page <a href="communaute.html">Communauté</a>. Laisse vide ce que tu ne veux pas partager.</li>
           <li>Tu peux lancer <code>node scripts/build-games.js</code> en local pour vérifier que ton jeu et ton profil apparaissent bien, mais n'ajoute pas <code>assets/games.js</code> à ton commit : la CI le régénère toute seule après le merge.</li>
           <li>Ouvre une pull request qui ne touche que ton dossier <code>games/ton-nom/</code>, avec une courte description de ton jeu.</li>

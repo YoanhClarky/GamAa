@@ -27,6 +27,19 @@ Le dossier `games/_template/` (et tout dossier commençant par `_`) est ignoré 
 
 > Pourquoi c'est important à grande échelle : si des centaines de contributeurs committaient chacun `assets/games.js`, ce fichier deviendrait un point de conflit permanent. En le laissant uniquement à la CI, chaque PR ne touche que son propre dossier et ne peut jamais entrer en conflit avec une autre.
 
+## Classements et connexion optionnelle
+
+On joue toujours sans compte. Mais `games/_template/` intègre déjà un classement partagé par jeu et une connexion facultative (lien magique par email, sans mot de passe) pour qu'un joueur retrouve son meilleur score d'une session à l'autre — via [Supabase](https://supabase.com), inclus en une balise `<script>`, toujours sans framework.
+
+Le périmètre de cette base est volontairement limité aux scores : la seule table créée par `supabase/schema.sql` est `scores` (jeu, pseudo, score, date, identifiant de compte si connecté) — pas de profil joueur, pas de suivi, rien de plus.
+
+Pour que ça fonctionne (sinon les jeux restent jouables, juste sans classement) :
+1. Crée un projet gratuit sur [supabase.com](https://supabase.com).
+2. Exécute [supabase/schema.sql](supabase/schema.sql) dans l'éditeur SQL du projet.
+3. Renseigne `SUPABASE_URL` et `SUPABASE_ANON_KEY` dans [assets/supabase-config.js](assets/supabase-config.js) (valeurs dans Project Settings > API).
+
+Détails dans [Documentation](documentation.html).
+
 ## Structure du repo
 
 ```
@@ -35,7 +48,10 @@ gamAa/
 ├── assets/
 │   ├── site.css                    design système commun (header, boutons, cartes)
 │   ├── header.js                   composant d'en-tête, une seule copie pour tout le site
-│   └── games.js                    registre des jeux, généré — ne pas éditer à la main
+│   ├── games.js                    registre des jeux, généré — ne pas éditer à la main
+│   ├── supabase-config.js          URL + clé publique de ton projet Supabase
+│   └── leaderboard.js              connexion optionnelle + classements, partagé par tous les jeux
+├── supabase/schema.sql             à exécuter une fois dans ton projet Supabase
 ├── scripts/build-games.js          lit games/ et régénère assets/games.js
 ├── .github/workflows/
 │   ├── build-games.yml             régénère assets/games.js après chaque push sur main

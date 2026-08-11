@@ -14,24 +14,25 @@
   body {
     font-family: 'Segoe UI', system-ui, sans-serif;
     background: #1c2b39;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     color: #fff;
-    overflow: hidden;
+    padding: 10px 0;
     user-select: none;
   }
   h1 {
-    font-size: 1.6rem;
-    margin-bottom: 4px;
+    font-size: 1.4rem;
+    margin-bottom: 2px;
     font-weight: 700;
   }
   .subtitle {
     opacity: 0.85;
-    font-size: 0.9rem;
-    margin-bottom: 14px;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
     text-align: center;
     padding: 0 20px;
     max-width: 380px;
@@ -155,6 +156,77 @@
     font-weight: 700;
     cursor: pointer;
   }
+
+  /* Zone de jeu + classement affiché à droite (empilé sur petit écran). */
+  .game-layout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .game-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Classement partagé (optionnel) : connexion facultative pour garder son score. */
+  .leaderboard {
+    width: 220px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .leaderboard-header {
+    margin-bottom: 10px;
+  }
+  .leaderboard-header h2 {
+    font-size: 1rem;
+    margin: 0;
+  }
+  .auth-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+  }
+  .auth-box span {
+    overflow-wrap: anywhere;
+  }
+  .auth-box input {
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: none;
+    width: 100%;
+  }
+  .auth-box button {
+    margin-top: 0;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    width: 100%;
+  }
+  .leaderboard-list {
+    list-style: decimal;
+    padding-left: 20px;
+    padding-right: 4px;
+    margin: 0;
+    font-size: 0.85rem;
+    display: grid;
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .leaderboard-list .leaderboard-empty {
+    list-style: none;
+    margin-left: -20px;
+    opacity: 0.7;
+    font-size: 0.8rem;
+  }
 </style>
 </head>
 <body>
@@ -162,32 +234,48 @@
 <h1>Reproduis la Forme</h1>
 <p class="subtitle">Clique sur ta grille pour reproduire exactement le modèle affiché à côté, avec des cubes.</p>
 
-<div id="gameWrap">
-  <div id="hud">
-    <span id="levelDisplay">Niveau: 1</span>
-    <span id="timeDisplay">Temps: 0s</span>
-  </div>
-  <div id="boards">
-    <div class="board-block">
-      <div class="board-label">MODÈLE</div>
-      <div id="modelGrid" class="grid"></div>
+<div class="game-layout">
+  <div class="game-main">
+    <div id="gameWrap">
+      <div id="hud">
+        <span id="levelDisplay">Niveau: 1</span>
+        <span id="timeDisplay">Temps: 0s</span>
+      </div>
+      <div id="boards">
+        <div class="board-block">
+          <div class="board-label">MODÈLE</div>
+          <div id="modelGrid" class="grid"></div>
+        </div>
+        <div class="board-block">
+          <div class="board-label">TOI</div>
+          <div id="playerGrid" class="grid"></div>
+        </div>
+      </div>
+      <div id="feedback"></div>
+      <div id="actions">
+        <button id="checkBtn">Valider</button>
+        <button id="clearBtn" class="secondary">Effacer</button>
+      </div>
+      <div id="overlay">
+        <h2 id="overlayTitle">Prêt à jouer ?</h2>
+        <p id="overlayText">Observe le modèle en jaune, puis clique sur ta grille pour reproduire exactement la même forme. 8 niveaux, de plus en plus complexes.</p>
+        <button class="startbtn" id="startBtn">Commencer</button>
+      </div>
     </div>
-    <div class="board-block">
-      <div class="board-label">TOI</div>
-      <div id="playerGrid" class="grid"></div>
+  </div>
+
+  <div class="leaderboard">
+    <div class="leaderboard-header">
+      <h2>Meilleurs scores</h2>
+      <div id="authBox" class="auth-box"></div>
     </div>
-  </div>
-  <div id="feedback"></div>
-  <div id="actions">
-    <button id="checkBtn">Valider</button>
-    <button id="clearBtn" class="secondary">Effacer</button>
-  </div>
-  <div id="overlay">
-    <h2 id="overlayTitle">Prêt à jouer ?</h2>
-    <p id="overlayText">Observe le modèle en jaune, puis clique sur ta grille pour reproduire exactement la même forme. 8 niveaux, de plus en plus complexes.</p>
-    <button class="startbtn" id="startBtn">Commencer</button>
+    <ol id="leaderboardList" class="leaderboard-list"></ol>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js" integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg" crossorigin="anonymous"></script>
+<script src="../../assets/supabase-config.js"></script>
+<script src="../../assets/leaderboard.js"></script>
 
 <script>
 (function(){
@@ -206,6 +294,8 @@
   const overlayTitle = document.getElementById('overlayTitle');
   const overlayText = document.getElementById('overlayText');
   const startBtn = document.getElementById('startBtn');
+
+  const GAME_SLUG = location.pathname.split('/').pop().replace(/\.html$/, '');
 
   modelGridEl.style.gridTemplateColumns = `repeat(${GRID_SIZE}, ${CELL}px)`;
   playerGridEl.style.gridTemplateColumns = `repeat(${GRID_SIZE}, ${CELL}px)`;
@@ -345,13 +435,21 @@
     feedback.className = "";
   });
 
-  function finishGame(){
+  async function finishGame(){
     clearInterval(timerId);
     const totalTime = Math.floor((Date.now() - startTime)/1000);
     overlayTitle.textContent = "Tous les niveaux terminés !";
     overlayText.textContent = `Tu as reproduit les ${TOTAL_LEVELS} formes en ${totalTime} secondes au total.`;
     startBtn.textContent = "Rejouer";
     overlay.classList.remove('hidden');
+
+    // Le classement compte les points, où plus haut = meilleur : un temps
+    // total plus court doit donc donner plus de points.
+    const points = Math.max(0, 1000 - totalTime);
+    const user = await Leaderboard.getCurrentUser();
+    const playerName = user ? (user.email || 'Joueur connecté') : (prompt('Ton pseudo pour le classement :') || 'Anonyme');
+    await Leaderboard.submitScore(GAME_SLUG, playerName, points);
+    await refreshLeaderboard();
   }
 
   function startGame(){
@@ -363,6 +461,39 @@
   }
 
   startBtn.addEventListener('click', startGame);
+
+  // --- Connexion optionnelle + classement ---
+
+  function renderAuthBox(user){
+    const authBox = document.getElementById('authBox');
+    if (user){
+      authBox.innerHTML = `<span>${user.email}</span> <button id="signOutBtn" type="button">Déconnexion</button>`;
+      document.getElementById('signOutBtn').addEventListener('click', () => Leaderboard.signOut());
+      return;
+    }
+    authBox.innerHTML = `
+      <input id="authEmail" type="email" placeholder="Email pour garder ton score" />
+      <button id="signInBtn" type="button">Connexion</button>
+    `;
+    document.getElementById('signInBtn').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      if (!email) return;
+      await Leaderboard.signInWithEmail(email);
+      authBox.innerHTML = '<span>Vérifie ta boîte mail pour le lien de connexion.</span>';
+    });
+  }
+
+  async function refreshLeaderboard(){
+    const scores = await Leaderboard.getTopScores(GAME_SLUG);
+    const list = document.getElementById('leaderboardList');
+    list.innerHTML = scores.length
+      ? scores.map((row) => `<li>${row.player_name} — ${row.score}</li>`).join('')
+      : '<li class="leaderboard-empty">Aucun score pour l\'instant, sois le premier !</li>';
+  }
+
+  Leaderboard.onAuthChange(renderAuthBox);
+  Leaderboard.getCurrentUser().then(renderAuthBox);
+  refreshLeaderboard();
 
   buildGrids();
 })();

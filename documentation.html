@@ -99,10 +99,14 @@
 ├── communaute.html
 ├── assets/
 │   ├── logo.png
-│   ├── icon.png            <span class="tree-comment">// favicon + icône des jeux</span>
-│   ├── site.css             <span class="tree-comment">// design système commun (header, boutons, cards)</span>
-│   ├── header.js             <span class="tree-comment">// composant d'en-tête, une seule copie pour tout le site</span>
-│   └── games.js               <span class="tree-comment">// registre des jeux, généré — ne pas éditer à la main</span>
+│   ├── icon.png                <span class="tree-comment">// favicon + icône des jeux</span>
+│   ├── site.css                 <span class="tree-comment">// design système commun (header, boutons, cards)</span>
+│   ├── header.js                 <span class="tree-comment">// composant d'en-tête, une seule copie pour tout le site</span>
+│   ├── games.js                   <span class="tree-comment">// registre des jeux, généré — ne pas éditer à la main</span>
+│   ├── supabase-config.js          <span class="tree-comment">// URL + clé publique de ton projet Supabase</span>
+│   └── leaderboard.js               <span class="tree-comment">// connexion optionnelle + classements, partagé par tous les jeux</span>
+├── supabase/
+│   └── schema.sql              <span class="tree-comment">// à exécuter une fois dans ton projet Supabase</span>
 ├── scripts/
 │   └── build-games.js         <span class="tree-comment">// lit games/ et régénère assets/games.js</span>
 ├── .github/workflows/
@@ -110,7 +114,7 @@
 │   └── no-games-js-in-pr.yml  <span class="tree-comment">// rejette une PR qui toucherait assets/games.js</span>
 └── games/
     ├── _template/             <span class="tree-comment">// modèle à dupliquer, ignoré par le script</span>
-    │   ├── mon-jeu.html
+    │   ├── mon-jeu.html       <span class="tree-comment">// inclut déjà score + classement + connexion</span>
     │   └── profile.json       <span class="tree-comment">// modèle de fiche développeur</span>
     └── ton-nom/               <span class="tree-comment">// un dossier par développeur</span>
         ├── mon-jeu.html       <span class="tree-comment">// un fichier HTML autonome par jeu</span>
@@ -126,6 +130,7 @@
         <h2>Ajouter un nouveau jeu</h2>
         <p>1. Duplique le dossier <code>games/_template/</code> et renomme la copie avec ton nom : <code>games/ton-nom/</code>.</p>
         <p>2. Renomme <code>mon-jeu.html</code> avec le nom de ton jeu, puis modifie le <code>&lt;title&gt;</code>, les balises <code>&lt;meta name="game:*"&gt;</code> et le code à l'intérieur. Ces informations sont ce que la liste des jeux affiche sur l'accueil.</p>
+        <p><strong>Le classement partagé et la connexion sont facultatifs.</strong> Le template les inclut par défaut (voir la carte suivante), mais rien ne t'oblige à les garder : tu peux supprimer les balises <code>&lt;script&gt;</code> Supabase et le bloc <code>.leaderboard</code> de ton fichier, ton jeu reste parfaitement valide sans. Même si tu les gardes tels quels, ton jeu fonctionne normalement — seul le classement ne s'affiche pas tant que Supabase n'est pas configuré.</p>
         <p>3. Remplis <code>profile.json</code> dans ce même dossier : ton nom, une courte bio et tes liens (GitHub, site, réseaux). C'est ce qui apparaît sur ta fiche de la page <a href="communaute.html">Communauté</a>. Un champ vide n'est simplement pas affiché.</p>
         <p>4. Ouvre ta pull request en ne touchant que ton dossier <code>games/ton-nom/</code>. Ne commite jamais <code>assets/games.js</code> toi-même : c'est un fichier généré, partagé par tout le monde, et le modifier dans ta PR provoquerait un conflit avec les autres contributions. Une CI GitHub Actions le régénère automatiquement dès que ta PR est mergée sur <code>main</code> — et une seconde CI rejette toute PR qui y toucherait. Tu peux quand même lancer <code>node scripts/build-games.js</code> en local juste pour vérifier l'aperçu, sans committer le résultat. Le dossier <code>games/_template/</code> lui-même est toujours ignoré par le script (tout dossier commençant par <code>_</code> l'est).</p>
       </div>
@@ -143,6 +148,26 @@
     "linkedin": ""
   }
 }</code></pre>
+      </div>
+
+      <div class="card">
+        <h2>Classements et connexion optionnelle</h2>
+        <p>gamAa reste un monde libre : on joue sans compte. Mais chaque jeu peut proposer un classement partagé (top scores, tous joueurs confondus) et une connexion facultative pour qu'un joueur retrouve son meilleur score d'une session à l'autre au lieu d'en créer un nouveau à chaque partie. Ça repose sur <a href="https://supabase.com" target="_blank" rel="noopener">Supabase</a> (base de données + authentification hébergées), inclus via une simple balise <code>&lt;script&gt;</code> — toujours sans framework ni build.</p>
+        <p>Le dossier <code>games/_template/</code> intègre déjà tout le nécessaire (widget de connexion, appel <code>Leaderboard.submitScore()</code> à la fin de la partie, affichage du classement) : si tu pars de ce modèle, tu n'as rien à faire de plus pour en profiter. Mais rien n'est obligatoire : tu peux retirer ce bloc si tu ne veux pas de classement pour ton jeu, ce n'est pas une condition pour que ta pull request soit acceptée.</p>
+        <p>Pour que ça fonctionne réellement, un projet Supabase doit être configuré une fois pour tout le site :</p>
+        <p>1. Crée un projet gratuit sur <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>.</p>
+        <p>2. Dans l'éditeur SQL du projet, exécute le contenu de <code>supabase/schema.sql</code> (crée la table <code>scores</code> et ses règles d'accès).</p>
+        <p>3. Dans <code>assets/supabase-config.js</code>, remplace <code>SUPABASE_URL</code> et <code>SUPABASE_ANON_KEY</code> par les valeurs de Project Settings &gt; API. La clé "anon" est faite pour être publique côté client, ce n'est pas un secret.</p>
+        <p>Tant que ce fichier garde ses valeurs par défaut, les jeux restent jouables normalement : seul le classement est indisponible (erreur silencieuse en console).</p>
+        <pre><code>// assets/leaderboard.js expose :
+Leaderboard.getCurrentUser()                  // -> Promise&lt;user | null&gt;
+Leaderboard.onAuthChange(callback)
+Leaderboard.signInWithEmail(email)            // envoie un lien magique, pas de mot de passe
+Leaderboard.signOut()
+Leaderboard.submitScore(gameSlug, name, score)
+Leaderboard.getTopScores(gameSlug, limit)     // meilleur score par joueur ; sans limit, renvoie tout le classement</code></pre>
+        <p>La base ne garde qu'un score par joueur dans le classement (le meilleur), et personne ne peut modifier ou supprimer le score de quelqu'un d'autre — les règles d'accès (<code>supabase/schema.sql</code>) l'interdisent au niveau de la base, pas seulement dans le code. Un score anonyme reste basé sur un pseudo libre : sans connexion, rien n'empêche quelqu'un de le falsifier.</p>
+        <p><strong>Le périmètre de cette base est volontairement limité aux scores.</strong> La seule table créée par <code>supabase/schema.sql</code> est <code>scores</code> (jeu, pseudo, score, date, et l'identifiant de compte si connecté) : pas de profil joueur, pas de suivi de navigation, pas de collecte au-delà de ce qui sert le classement. La connexion facultative passe par le système d'authentification intégré de Supabase (juste pour relier un score à un compte), gamAa ne stocke ni ne voit jamais de mot de passe.</p>
       </div>
 
       <div class="card">

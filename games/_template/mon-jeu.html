@@ -14,24 +14,25 @@
   body {
     font-family: "Segoe UI", Roboto, Arial, sans-serif;
     background: #1c2b39;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     color: #fff;
-    overflow: hidden;
+    padding: 10px 0;
     user-select: none;
   }
   h1 {
-    font-size: 1.6rem;
-    margin-bottom: 4px;
+    font-size: 1.4rem;
+    margin-bottom: 2px;
     font-weight: 700;
   }
   .subtitle {
     opacity: 0.85;
-    font-size: 0.9rem;
-    margin-bottom: 14px;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
     text-align: center;
     padding: 0 20px;
     max-width: 380px;
@@ -46,6 +47,9 @@
   canvas {
     display: block;
     touch-action: none;
+    max-height: calc(100vh - 220px);
+    width: auto;
+    height: auto;
   }
   #overlay {
     position: absolute;
@@ -75,6 +79,96 @@
   }
   button:active { transform: scale(0.95); }
   .hidden { display: none !important; }
+
+  #hud {
+    width: 100%;
+    max-width: 360px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-top: 10px;
+    opacity: 0.9;
+  }
+
+  #endBtn {
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid #fff;
+    color: #fff;
+    padding: 8px 18px;
+    font-size: 0.85rem;
+  }
+
+  /* Zone de jeu + classement affiché à droite (empilé sur petit écran). */
+  .game-layout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .game-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Classement partagé (optionnel) : connexion facultative pour garder son score. */
+  .leaderboard {
+    width: 220px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .leaderboard-header {
+    margin-bottom: 10px;
+  }
+  .leaderboard-header h2 {
+    font-size: 1rem;
+    margin: 0;
+  }
+  .auth-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+  }
+  .auth-box span {
+    overflow-wrap: anywhere;
+  }
+  .auth-box input {
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: none;
+    width: 100%;
+  }
+  .auth-box button {
+    margin-top: 0;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    width: 100%;
+  }
+  .leaderboard-list {
+    list-style: decimal;
+    padding-left: 20px;
+    padding-right: 4px;
+    margin: 0;
+    font-size: 0.85rem;
+    display: grid;
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .leaderboard-list .leaderboard-empty {
+    list-style: none;
+    margin-left: -20px;
+    opacity: 0.7;
+    font-size: 0.8rem;
+  }
 </style>
 </head>
 <body>
@@ -82,14 +176,41 @@
 <h1>Nom du jeu</h1>
 <p class="subtitle">Une phrase qui explique le principe du jeu en une ligne.</p>
 
-<div id="gameWrap">
-  <canvas id="game" width="360" height="540"></canvas>
-  <div id="overlay">
-    <h2 id="overlayTitle">Prêt à jouer ?</h2>
-    <p id="overlayText">Explique ici le but du jeu et les contrôles.</p>
-    <button id="startBtn">Commencer</button>
+<div class="game-layout">
+  <div class="game-main">
+    <div id="gameWrap">
+      <canvas id="game" width="360" height="540"></canvas>
+      <div id="overlay">
+        <h2 id="overlayTitle">Prêt à jouer ?</h2>
+        <p id="overlayText">Explique ici le but du jeu et les contrôles.</p>
+        <button id="startBtn">Commencer</button>
+      </div>
+    </div>
+
+    <div id="hud">
+      <span>Score : <span id="scoreDisplay">0</span></span>
+    </div>
+    <button id="endBtn" class="hidden">Terminer la partie</button>
+  </div>
+
+  <div class="leaderboard">
+    <div class="leaderboard-header">
+      <h2>Meilleurs scores</h2>
+      <div id="authBox" class="auth-box"></div>
+    </div>
+    <ol id="leaderboardList" class="leaderboard-list"></ol>
   </div>
 </div>
+
+<!--
+  Classement partagé (optionnel) : voir documentation.html > "Classements et
+  connexion optionnelle" pour configurer ton propre projet Supabase avant que
+  ça fonctionne. Sans configuration, le jeu reste jouable, seul le classement
+  est indisponible.
+-->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js" integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg" crossorigin="anonymous"></script>
+<script src="../../assets/supabase-config.js"></script>
+<script src="../../assets/leaderboard.js"></script>
 
 <script>
 (function () {
@@ -101,8 +222,15 @@
   const overlayTitle = document.getElementById('overlayTitle');
   const overlayText = document.getElementById('overlayText');
   const startBtn = document.getElementById('startBtn');
+  const endBtn = document.getElementById('endBtn');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+
+  // Identifiant du jeu pour le classement : dérivé du nom de fichier,
+  // pas besoin d'y toucher même après avoir renommé mon-jeu.html.
+  const GAME_SLUG = location.pathname.split('/').pop().replace(/\.html$/, '');
 
   let running = false;
+  let score = 0;
 
   function draw() {
     ctx.clearRect(0, 0, W, H);
@@ -114,7 +242,10 @@
   }
 
   function update() {
-    // logique du jeu à chaque frame
+    // Logique du jeu à chaque frame. Remplace la ligne suivante par ta
+    // vraie règle de score (points marqués, distance parcourue, etc.).
+    score++;
+    scoreDisplay.textContent = score;
   }
 
   let rafId;
@@ -126,12 +257,69 @@
   }
 
   function startGame() {
+    score = 0;
+    scoreDisplay.textContent = score;
     overlay.classList.add('hidden');
+    endBtn.classList.remove('hidden');
     running = true;
     loop();
   }
 
+  // Appelle cette fonction quand TA partie se termine (collision, temps
+  // écoulé, etc.) au lieu du bouton "Terminer la partie", qui n'est là que
+  // pour tester le classement pendant le développement.
+  async function endGame(finalScore) {
+    running = false;
+    cancelAnimationFrame(rafId);
+    endBtn.classList.add('hidden');
+
+    const user = await Leaderboard.getCurrentUser();
+    const playerName = user ? (user.email || 'Joueur connecté') : (prompt('Ton pseudo pour le classement :') || 'Anonyme');
+    await Leaderboard.submitScore(GAME_SLUG, playerName, finalScore);
+    await refreshLeaderboard();
+
+    overlayTitle.textContent = 'Partie terminée';
+    overlayText.textContent = `Score : ${finalScore}`;
+    startBtn.textContent = 'Rejouer';
+    overlay.classList.remove('hidden');
+  }
+
   startBtn.addEventListener('click', startGame);
+  endBtn.addEventListener('click', () => endGame(score));
+
+  // --- Connexion optionnelle + classement ---
+
+  function renderAuthBox(user) {
+    if (user) {
+      const authBox = document.getElementById('authBox');
+      authBox.innerHTML = `<span>${user.email}</span> <button id="signOutBtn" type="button">Déconnexion</button>`;
+      document.getElementById('signOutBtn').addEventListener('click', () => Leaderboard.signOut());
+      return;
+    }
+    const authBox = document.getElementById('authBox');
+    authBox.innerHTML = `
+      <input id="authEmail" type="email" placeholder="Email pour garder ton score" />
+      <button id="signInBtn" type="button">Connexion</button>
+    `;
+    document.getElementById('signInBtn').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      if (!email) return;
+      await Leaderboard.signInWithEmail(email);
+      authBox.innerHTML = '<span>Vérifie ta boîte mail pour le lien de connexion.</span>';
+    });
+  }
+
+  async function refreshLeaderboard() {
+    const scores = await Leaderboard.getTopScores(GAME_SLUG);
+    const list = document.getElementById('leaderboardList');
+    list.innerHTML = scores.length
+      ? scores.map((row) => `<li>${row.player_name} — ${row.score}</li>`).join('')
+      : '<li class="leaderboard-empty">Aucun score pour l\'instant, sois le premier !</li>';
+  }
+
+  Leaderboard.onAuthChange(renderAuthBox);
+  Leaderboard.getCurrentUser().then(renderAuthBox);
+  refreshLeaderboard();
 
   draw();
 })();
