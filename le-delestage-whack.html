@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Délestage</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #1c2b39;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+    font-weight: 700;
+  }
+  .subtitle {
+    opacity: 0.85;
+    font-size: 0.9rem;
+    margin-bottom: 14px;
+    text-align: center;
+    padding: 0 20px;
+    max-width: 380px;
+  }
+  #gameWrap {
+    position: relative;
+    width: 360px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 3px solid #fff;
+    background: #ffffff;
+  }
+  #hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: #ffffff;
+    border-bottom: 2px solid #1c2b39;
+  }
+  #hud span {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #1c2b39;
+    background: #f0f0f0;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
+    background: #ffffff;
+  }
+  .cell {
+    position: relative;
+    height: 90px;
+    background: #eef0f2;
+    border: 2px solid #d0d4d8;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #90959c;
+    cursor: pointer;
+    overflow: hidden;
+    transition: background 0.1s ease, border-color 0.1s ease;
+  }
+  .cell.danger {
+    background: #fdecea;
+    border-color: #c0392b;
+    color: #c0392b;
+  }
+  .cell.safe-flash {
+    background: #e6f4ea;
+    border-color: #2e7d32;
+    color: #2e7d32;
+  }
+  .cell.burnt {
+    background: #2b2b2b;
+    border-color: #000;
+    color: #666;
+  }
+  .cell .timerbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: #c0392b;
+    width: 100%;
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: #1c2b39;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    gap: 10px;
+  }
+  #overlay h2 { font-size: 1.4rem; }
+  #overlay p { opacity: 0.9; max-width: 300px; font-size: 0.9rem; line-height: 1.4; }
+  button {
+    margin-top: 10px;
+    background: #f4b400;
+    color: #1c2b39;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  button:active { transform: scale(0.95); }
+  .hidden { display: none !important; }
+  #controls {
+    margin-top: 14px;
+    font-size: 0.85rem;
+    color: #ffffff;
+    background: rgba(0,0,0,0.3);
+    padding: 6px 14px;
+    border-radius: 6px;
+    text-align: center;
+  }
+  #best { font-size: 0.85rem; opacity: 0.9; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Le Délestage</h1>
+<p class="subtitle">Après une coupure, le courant revient parfois en surtension. Clique sur chaque appareil avant qu'il ne grille.</p>
+
+<div id="gameWrap">
+  <div id="hud">
+    <span id="scoreDisplay">Score: 0</span>
+    <span id="livesDisplay">Vies: 3</span>
+    <span id="levelDisplay">Réseau: Stable</span>
+  </div>
+  <div id="grid"></div>
+  <div id="overlay">
+    <h2 id="overlayTitle">Le courant vient de revenir</h2>
+    <p id="overlayText">Des surtensions vont frapper au hasard sur la grille. Clique sur l'appareil touché avant qu'il ne grille. 3 appareils grillés = fin de partie.</p>
+    <button id="startBtn">Démarrer</button>
+    <div id="best"></div>
+  </div>
+</div>
+
+<div id="controls">Clique sur les cases rouges avant la fin du minuteur</div>
+
+<script>
+(function(){
+  const gridEl = document.getElementById('grid');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const startBtn = document.getElementById('startBtn');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const livesDisplay = document.getElementById('livesDisplay');
+  const levelDisplay = document.getElementById('levelDisplay');
+  const bestDisplay = document.getElementById('best');
+
+  const ROWS = 3, COLS = 3;
+  const TOTAL = ROWS * COLS;
+  const appliances = ["TV", "FRIGO", "LAMPE", "VENTILO", "RADIO", "PC", "FER", "POMPE", "CHARGEUR"];
+
+  let cells = [];
+  let score = 0;
+  let lives = 3;
+  let running = false;
+  let best = Number(localStorage.getItem('delestageWhackBest') || 0);
+  let spawnLoopId = null;
+  let baseDangerDuration = 1500;
+
+  const levels = [
+    {score: 0, name: "Stable"},
+    {score: 10, name: "Variable"},
+    {score: 25, name: "Instable"},
+    {score: 45, name: "Critique"},
+    {score: 70, name: "Chaotique"},
+    {score: 100, name: "Maîtrisé"}
+  ];
+
+  function currentLevel(){
+    let lvl = levels[0];
+    for (const l of levels) if (score >= l.score) lvl = l;
+    return lvl.name;
+  }
+
+  function updateBestDisplay(){
+    bestDisplay.textContent = best > 0 ? `Record : ${best} points` : "";
+  }
+  updateBestDisplay();
+
+  function buildGrid(){
+    gridEl.innerHTML = "";
+    cells = [];
+    for (let i = 0; i < TOTAL; i++){
+      const div = document.createElement('div');
+      div.className = 'cell';
+      div.textContent = appliances[i % appliances.length];
+      const bar = document.createElement('div');
+      bar.className = 'timerbar';
+      bar.style.width = '0%';
+      div.appendChild(bar);
+      gridEl.appendChild(div);
+      const cellObj = { el: div, bar, state: 'idle', timeoutId: null, animFrame: null };
+      div.addEventListener('click', () => handleClick(cellObj));
+      cells.push(cellObj);
+    }
+  }
+
+  function handleClick(cell){
+    if (!running) return;
+    if (cell.state === 'danger'){
+      cell.state = 'idle';
+      clearTimeout(cell.timeoutId);
+      cancelAnimationFrame(cell.animFrame);
+      cell.el.classList.remove('danger');
+      cell.el.classList.add('safe-flash');
+      cell.bar.style.width = '0%';
+      setTimeout(() => cell.el.classList.remove('safe-flash'), 200);
+      score++;
+      scoreDisplay.textContent = "Score: " + score;
+      levelDisplay.textContent = "Réseau: " + currentLevel();
+    }
+  }
+
+  function triggerDanger(){
+    if (!running) return;
+    const idleCells = cells.filter(c => c.state === 'idle');
+    if (idleCells.length === 0) return;
+    const cell = idleCells[Math.floor(Math.random() * idleCells.length)];
+    cell.state = 'danger';
+    cell.el.classList.add('danger');
+
+    const duration = Math.max(650, baseDangerDuration - score * 12);
+    const startTime = performance.now();
+
+    function animate(now){
+      if (cell.state !== 'danger') return;
+      const elapsed = now - startTime;
+      const remaining = Math.max(0, 1 - elapsed / duration);
+      cell.bar.style.width = (remaining * 100) + '%';
+      if (remaining > 0){
+        cell.animFrame = requestAnimationFrame(animate);
+      }
+    }
+    cell.animFrame = requestAnimationFrame(animate);
+
+    cell.timeoutId = setTimeout(() => {
+      if (cell.state === 'danger'){
+        burnCell(cell);
+      }
+    }, duration);
+  }
+
+  function burnCell(cell){
+    cell.state = 'burnt';
+    cell.el.classList.remove('danger');
+    cell.el.classList.add('burnt');
+    cell.bar.style.width = '0%';
+    lives--;
+    livesDisplay.textContent = "Vies: " + lives;
+    if (lives <= 0){
+      gameOver();
+      return;
+    }
+    setTimeout(() => {
+      if (cell.state === 'burnt'){
+        cell.state = 'idle';
+        cell.el.classList.remove('burnt');
+      }
+    }, 1200);
+  }
+
+  function spawnLoop(){
+    if (!running) return;
+    triggerDanger();
+    const nextDelay = Math.max(500, 1100 - score * 8) + Math.random() * 400;
+    spawnLoopId = setTimeout(spawnLoop, nextDelay);
+  }
+
+  function resetGame(){
+    score = 0;
+    lives = 3;
+    scoreDisplay.textContent = "Score: 0";
+    livesDisplay.textContent = "Vies: 3";
+    levelDisplay.textContent = "Réseau: " + currentLevel();
+    buildGrid();
+  }
+
+  function gameOver(){
+    running = false;
+    clearTimeout(spawnLoopId);
+    cells.forEach(c => {
+      clearTimeout(c.timeoutId);
+      cancelAnimationFrame(c.animFrame);
+    });
+    if (score > best){
+      best = score;
+      localStorage.setItem('delestageWhackBest', best);
+    }
+    updateBestDisplay();
+    const lvl = currentLevel();
+    overlayTitle.textContent = "Coupure générale ! Score : " + score;
+    overlayText.textContent = `Ton réseau était en état "${lvl}" avant le black-out. Rejoue pour voir combien d'appareils tu peux sauver.`;
+    startBtn.textContent = "Rejouer";
+    overlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    resetGame();
+    overlay.classList.add('hidden');
+    running = true;
+    spawnLoop();
+  }
+
+  startBtn.addEventListener('click', startGame);
+
+  buildGrid();
+})();
+</script>
+
+</body>
+</html>

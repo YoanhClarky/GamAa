@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>En Route pour le Boulot</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #1c2b39;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+    font-weight: 700;
+  }
+  .subtitle {
+    opacity: 0.85;
+    font-size: 0.9rem;
+    margin-bottom: 14px;
+    text-align: center;
+    padding: 0 20px;
+    max-width: 380px;
+  }
+  #gameWrap {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 3px solid #fff;
+  }
+  canvas {
+    display: block;
+    background: #ffffff;
+    touch-action: none;
+  }
+  #hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1c2b39;
+    pointer-events: none;
+  }
+  #hud span { background: #ffffff; padding: 4px 12px; border-radius: 6px; border: 2px solid #1c2b39; }
+  #timeDisplay.warning { color: #c0392b; }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: #1c2b39;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    gap: 10px;
+  }
+  #overlay h2 { font-size: 1.4rem; }
+  #overlay p { opacity: 0.9; max-width: 300px; font-size: 0.9rem; line-height: 1.4; }
+  button {
+    margin-top: 10px;
+    background: #f4b400;
+    color: #1c2b39;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  button:active { transform: scale(0.95); }
+  .hidden { display: none !important; }
+  #controls {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  #controls .row { display: flex; gap: 4px; }
+  #controls button.dpad {
+    width: 52px;
+    height: 52px;
+    background: #ffffff;
+    color: #1c2b39;
+    font-size: 1.2rem;
+    border-radius: 8px;
+    margin: 0;
+  }
+  #hint {
+    margin-top: 10px;
+    font-size: 0.82rem;
+    color: #ffffff;
+    background: rgba(0,0,0,0.3);
+    padding: 6px 14px;
+    border-radius: 6px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>En Route pour le Boulot</h1>
+<p class="subtitle">Déplace-toi librement pour atteindre le bureau en haut, esquive les obstacles, avant la fin du temps imparti.</p>
+
+<div id="gameWrap">
+  <canvas id="game" width="380" height="480"></canvas>
+  <div id="hud">
+    <span id="timeDisplay">30s</span>
+    <span id="bestDisplay"></span>
+  </div>
+  <div id="overlay">
+    <h2 id="overlayTitle">Direction le bureau</h2>
+    <p id="overlayText">Déplace-toi dans les quatre directions pour atteindre le point BUREAU en haut de l'écran, en esquivant les obstacles, avant la fin du chrono.</p>
+    <button id="startBtn">Partir au travail</button>
+  </div>
+</div>
+
+<div id="controls">
+  <div class="row"><button class="dpad" data-dir="up">↑</button></div>
+  <div class="row">
+    <button class="dpad" data-dir="left">←</button>
+    <button class="dpad" data-dir="down">↓</button>
+    <button class="dpad" data-dir="right">→</button>
+  </div>
+</div>
+<div id="hint">Flèches / WASD ou les boutons ci-dessus</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const startBtn = document.getElementById('startBtn');
+  const timeDisplay = document.getElementById('timeDisplay');
+  const bestDisplay = document.getElementById('bestDisplay');
+
+  const TIME_LIMIT = 30; // seconds
+  const GOAL = { x: W/2 - 55, y: 14, w: 110, h: 40 };
+  const player = { x: W/2 - 16, y: H - 60, w: 32, h: 32, speed: 3.2 };
+  const keys = { up:false, down:false, left:false, right:false };
+
+  let obstacles = [];
+  let running = false;
+  let timeLeft = TIME_LIMIT;
+  let lastTick = 0;
+  let best = Number(localStorage.getItem('boulotFreeBest') || 0);
+
+  function updateBestDisplay(){
+    bestDisplay.textContent = best > 0 ? `Record: ${best.toFixed(1)}s` : "";
+  }
+  updateBestDisplay();
+
+  function makeObstacles(){
+    obstacles = [];
+    const count = 6;
+    for (let i = 0; i < count; i++){
+      const size = 30 + Math.random()*14;
+      obstacles.push({
+        x: Math.random() * (W - size),
+        y: 90 + Math.random() * (H - 200),
+        w: size, h: size,
+        vx: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random()*1.6),
+        vy: (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random()*1.6)
+      });
+    }
+  }
+
+  function resetGame(){
+    player.x = W/2 - 16;
+    player.y = H - 60;
+    timeLeft = TIME_LIMIT;
+    timeDisplay.textContent = TIME_LIMIT + "s";
+    timeDisplay.classList.remove('warning');
+    makeObstacles();
+  }
+
+  function update(dt){
+    let dx = 0, dy = 0;
+    if (keys.up) dy -= 1;
+    if (keys.down) dy += 1;
+    if (keys.left) dx -= 1;
+    if (keys.right) dx += 1;
+    if (dx !== 0 && dy !== 0){ dx *= 0.7071; dy *= 0.7071; }
+    player.x += dx * player.speed;
+    player.y += dy * player.speed;
+    player.x = Math.max(0, Math.min(W - player.w, player.x));
+    player.y = Math.max(0, Math.min(H - player.h, player.y));
+
+    obstacles.forEach(o => {
+      o.x += o.vx;
+      o.y += o.vy;
+      if (o.x < 0 || o.x + o.w > W) o.vx *= -1;
+      if (o.y < 70 || o.y + o.h > H - 20) o.vy *= -1;
+      o.x = Math.max(0, Math.min(W - o.w, o.x));
+      o.y = Math.max(70, Math.min(H - 20 - o.h, o.y));
+    });
+
+    for (const o of obstacles){
+      if (player.x < o.x + o.w && player.x + player.w > o.x &&
+          player.y < o.y + o.h && player.y + player.h > o.y){
+        lose();
+        return;
+      }
+    }
+
+    if (player.x < GOAL.x + GOAL.w && player.x + player.w > GOAL.x &&
+        player.y < GOAL.y + GOAL.h && player.y + player.h > GOAL.y){
+      win();
+      return;
+    }
+
+    timeLeft -= dt;
+    if (timeLeft <= 5) timeDisplay.classList.add('warning');
+    timeDisplay.textContent = Math.max(0, timeLeft).toFixed(1) + "s";
+    if (timeLeft <= 0){
+      timeout();
+      return;
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    ctx.fillStyle = "#fdf6e3";
+    ctx.fillRect(GOAL.x, GOAL.y, GOAL.w, GOAL.h);
+    ctx.strokeStyle = "#f4b400";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(GOAL.x, GOAL.y, GOAL.w, GOAL.h);
+    ctx.fillStyle = "#1c2b39";
+    ctx.font = "bold 14px 'Segoe UI', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("BUREAU", GOAL.x + GOAL.w/2, GOAL.y + GOAL.h/2 + 1);
+
+    obstacles.forEach(o => {
+      ctx.fillStyle = "#c0392b";
+      roundRect(ctx, o.x, o.y, o.w, o.h, 6);
+      ctx.fill();
+    });
+
+    ctx.fillStyle = "#f4b400";
+    roundRect(ctx, player.x, player.y, player.w, player.h, 8);
+    ctx.fill();
+    ctx.fillStyle = "#1c2b39";
+    ctx.font = "bold 10px 'Segoe UI', sans-serif";
+    ctx.fillText("MOI", player.x + player.w/2, player.y + player.h/2 + 1);
+  }
+
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  let rafId;
+  function loop(now){
+    if (!running) return;
+    const dt = lastTick ? (now - lastTick) / 1000 : 0;
+    lastTick = now;
+    update(dt);
+    if (!running) return;
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function endRun(){
+    running = false;
+    cancelAnimationFrame(rafId);
+    lastTick = 0;
+  }
+
+  function win(){
+    endRun();
+    const elapsed = TIME_LIMIT - timeLeft;
+    if (best === 0 || elapsed < best){
+      best = elapsed;
+      localStorage.setItem('boulotFreeBest', best);
+    }
+    updateBestDisplay();
+    overlayTitle.textContent = "Arrivé à temps !";
+    overlayText.textContent = `Tu as rejoint le bureau en ${elapsed.toFixed(1)} secondes, avec ${timeLeft.toFixed(1)}s restantes.`;
+    startBtn.textContent = "Rejouer";
+    overlay.classList.remove('hidden');
+  }
+
+  function lose(){
+    endRun();
+    overlayTitle.textContent = "Bloqué en chemin";
+    overlayText.textContent = "Un obstacle t'a arrêté avant d'atteindre le bureau. Réessaie.";
+    startBtn.textContent = "Rejouer";
+    overlay.classList.remove('hidden');
+  }
+
+  function timeout(){
+    endRun();
+    overlayTitle.textContent = "En retard";
+    overlayText.textContent = "Le temps est écoulé avant que tu n'atteignes le bureau. Réessaie.";
+    startBtn.textContent = "Rejouer";
+    overlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    resetGame();
+    overlay.classList.add('hidden');
+    running = true;
+    lastTick = 0;
+    rafId = requestAnimationFrame(loop);
+  }
+
+  startBtn.addEventListener('click', startGame);
+
+  document.addEventListener('keydown', (e) => {
+    if (['ArrowUp','w','W'].includes(e.key)) keys.up = true;
+    if (['ArrowDown','s','S'].includes(e.key)) keys.down = true;
+    if (['ArrowLeft','a','A'].includes(e.key)) keys.left = true;
+    if (['ArrowRight','d','D'].includes(e.key)) keys.right = true;
+  });
+  document.addEventListener('keyup', (e) => {
+    if (['ArrowUp','w','W'].includes(e.key)) keys.up = false;
+    if (['ArrowDown','s','S'].includes(e.key)) keys.down = false;
+    if (['ArrowLeft','a','A'].includes(e.key)) keys.left = false;
+    if (['ArrowRight','d','D'].includes(e.key)) keys.right = false;
+  });
+
+  document.querySelectorAll('.dpad').forEach(btn => {
+    const dir = btn.dataset.dir;
+    const setState = (val) => { keys[dir] = val; };
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); setState(true); }, {passive:false});
+    btn.addEventListener('touchend', (e) => { e.preventDefault(); setState(false); }, {passive:false});
+    btn.addEventListener('mousedown', () => setState(true));
+    btn.addEventListener('mouseup', () => setState(false));
+    btn.addEventListener('mouseleave', () => setState(false));
+  });
+
+  draw();
+})();
+</script>
+
+</body>
+</html>

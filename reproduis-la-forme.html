@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reproduis la Forme</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #1c2b39;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+    font-weight: 700;
+  }
+  .subtitle {
+    opacity: 0.85;
+    font-size: 0.9rem;
+    margin-bottom: 14px;
+    text-align: center;
+    padding: 0 20px;
+    max-width: 380px;
+  }
+  #gameWrap {
+    position: relative;
+    width: 360px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 3px solid #fff;
+    background: #ffffff;
+  }
+  #hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 2px solid #1c2b39;
+  }
+  #hud span {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #1c2b39;
+    background: #f0f0f0;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+  #boards {
+    display: flex;
+    padding: 16px 12px 6px;
+    gap: 14px;
+    justify-content: center;
+  }
+  .board-block { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .board-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #1c2b39;
+    letter-spacing: 0.5px;
+  }
+  .grid {
+    display: grid;
+    gap: 4px;
+  }
+  .cube {
+    width: 26px;
+    height: 26px;
+    background: #eef0f2;
+    border: 2px solid #d0d4d8;
+    border-radius: 4px;
+  }
+  .cube.filled.model {
+    background: #f4b400;
+    border-color: #c99200;
+  }
+  .cube.filled.player {
+    background: #0a66c2;
+    border-color: #084e94;
+    cursor: pointer;
+  }
+  .cube.empty.player {
+    cursor: pointer;
+  }
+  .cube.empty.player:active {
+    background: #dfe3e6;
+  }
+  #actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 12px 16px;
+  }
+  #actions button {
+    margin: 0;
+    background: #f4b400;
+    color: #1c2b39;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  #actions button.secondary {
+    background: #eef0f2;
+    color: #1c2b39;
+  }
+  #feedback {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    min-height: 20px;
+    padding-bottom: 8px;
+    color: #1c2b39;
+  }
+  #feedback.ok { color: #2e7d32; }
+  #feedback.no { color: #c0392b; }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: #1c2b39;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    gap: 10px;
+  }
+  #overlay h2 { font-size: 1.4rem; }
+  #overlay p { opacity: 0.9; max-width: 300px; font-size: 0.9rem; line-height: 1.4; }
+  .hidden { display: none !important; }
+  button.startbtn {
+    margin-top: 10px;
+    background: #f4b400;
+    color: #1c2b39;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>Reproduis la Forme</h1>
+<p class="subtitle">Clique sur ta grille pour reproduire exactement le modèle affiché à côté, avec des cubes.</p>
+
+<div id="gameWrap">
+  <div id="hud">
+    <span id="levelDisplay">Niveau: 1</span>
+    <span id="timeDisplay">Temps: 0s</span>
+  </div>
+  <div id="boards">
+    <div class="board-block">
+      <div class="board-label">MODÈLE</div>
+      <div id="modelGrid" class="grid"></div>
+    </div>
+    <div class="board-block">
+      <div class="board-label">TOI</div>
+      <div id="playerGrid" class="grid"></div>
+    </div>
+  </div>
+  <div id="feedback"></div>
+  <div id="actions">
+    <button id="checkBtn">Valider</button>
+    <button id="clearBtn" class="secondary">Effacer</button>
+  </div>
+  <div id="overlay">
+    <h2 id="overlayTitle">Prêt à jouer ?</h2>
+    <p id="overlayText">Observe le modèle en jaune, puis clique sur ta grille pour reproduire exactement la même forme. 8 niveaux, de plus en plus complexes.</p>
+    <button class="startbtn" id="startBtn">Commencer</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const GRID_SIZE = 5;
+  const CELL = 26, GAP = 4;
+  const TOTAL_LEVELS = 8;
+
+  const modelGridEl = document.getElementById('modelGrid');
+  const playerGridEl = document.getElementById('playerGrid');
+  const levelDisplay = document.getElementById('levelDisplay');
+  const timeDisplay = document.getElementById('timeDisplay');
+  const feedback = document.getElementById('feedback');
+  const checkBtn = document.getElementById('checkBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const startBtn = document.getElementById('startBtn');
+
+  modelGridEl.style.gridTemplateColumns = `repeat(${GRID_SIZE}, ${CELL}px)`;
+  playerGridEl.style.gridTemplateColumns = `repeat(${GRID_SIZE}, ${CELL}px)`;
+
+  let level = 1;
+  let modelShape = [];
+  let playerShape = [];
+  let modelCells = [];
+  let playerCells = [];
+  let startTime = 0;
+  let timerId = null;
+
+  function buildGrids(){
+    modelGridEl.innerHTML = "";
+    playerGridEl.innerHTML = "";
+    modelCells = [];
+    playerCells = [];
+    for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++){
+      const m = document.createElement('div');
+      m.className = 'cube empty model';
+      modelGridEl.appendChild(m);
+      modelCells.push(m);
+
+      const p = document.createElement('div');
+      p.className = 'cube empty player';
+      p.addEventListener('click', () => toggleCell(i));
+      playerGridEl.appendChild(p);
+      playerCells.push(p);
+    }
+  }
+
+  function generateShape(numCells){
+    // random connected-ish shape: start from center, grow outward
+    const size = GRID_SIZE;
+    const idx = (r,c) => r*size + c;
+    const filled = new Set();
+    let r = Math.floor(size/2), c = Math.floor(size/2);
+    filled.add(idx(r,c));
+    const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+    let attempts = 0;
+    while (filled.size < numCells && attempts < 200){
+      attempts++;
+      const arr = Array.from(filled);
+      const base = arr[Math.floor(Math.random()*arr.length)];
+      const br = Math.floor(base/size), bc = base % size;
+      const [dr,dc] = dirs[Math.floor(Math.random()*dirs.length)];
+      const nr = br+dr, nc = bc+dc;
+      if (nr>=0 && nr<size && nc>=0 && nc<size){
+        filled.add(idx(nr,nc));
+      }
+    }
+    return Array.from(filled);
+  }
+
+  function renderModel(){
+    modelCells.forEach((el, i) => {
+      if (modelShape.includes(i)){
+        el.classList.add('filled');
+        el.classList.remove('empty');
+      } else {
+        el.classList.remove('filled');
+        el.classList.add('empty');
+      }
+    });
+  }
+
+  function renderPlayer(){
+    playerCells.forEach((el, i) => {
+      if (playerShape.includes(i)){
+        el.classList.add('filled');
+        el.classList.remove('empty');
+      } else {
+        el.classList.remove('filled');
+        el.classList.add('empty');
+      }
+    });
+  }
+
+  function toggleCell(i){
+    const pos = playerShape.indexOf(i);
+    if (pos === -1) playerShape.push(i);
+    else playerShape.splice(pos, 1);
+    renderPlayer();
+    feedback.textContent = "";
+    feedback.className = "";
+  }
+
+  function startTimer(){
+    startTime = Date.now();
+    clearInterval(timerId);
+    timerId = setInterval(() => {
+      const s = Math.floor((Date.now() - startTime)/1000);
+      timeDisplay.textContent = "Temps: " + s + "s";
+    }, 250);
+  }
+
+  function loadLevel(){
+    const numCells = 4 + level; // grows with level, from 5 to 12
+    modelShape = generateShape(Math.min(numCells, GRID_SIZE*GRID_SIZE - 2));
+    playerShape = [];
+    levelDisplay.textContent = "Niveau: " + level;
+    renderModel();
+    renderPlayer();
+    feedback.textContent = "";
+    feedback.className = "";
+  }
+
+  function arraysEqual(a, b){
+    if (a.length !== b.length) return false;
+    const sa = [...a].sort((x,y)=>x-y);
+    const sb = [...b].sort((x,y)=>x-y);
+    return sa.every((v,i) => v === sb[i]);
+  }
+
+  checkBtn.addEventListener('click', () => {
+    if (arraysEqual(modelShape, playerShape)){
+      feedback.textContent = "Bien joué !";
+      feedback.className = "ok";
+      setTimeout(() => {
+        if (level >= TOTAL_LEVELS){
+          finishGame();
+        } else {
+          level++;
+          loadLevel();
+        }
+      }, 700);
+    } else {
+      feedback.textContent = "Ce n'est pas encore ça, réessaie.";
+      feedback.className = "no";
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    playerShape = [];
+    renderPlayer();
+    feedback.textContent = "";
+    feedback.className = "";
+  });
+
+  function finishGame(){
+    clearInterval(timerId);
+    const totalTime = Math.floor((Date.now() - startTime)/1000);
+    overlayTitle.textContent = "Tous les niveaux terminés !";
+    overlayText.textContent = `Tu as reproduit les ${TOTAL_LEVELS} formes en ${totalTime} secondes au total.`;
+    startBtn.textContent = "Rejouer";
+    overlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    level = 1;
+    buildGrids();
+    loadLevel();
+    overlay.classList.add('hidden');
+    startTimer();
+  }
+
+  startBtn.addEventListener('click', startGame);
+
+  buildGrids();
+})();
+</script>
+
+</body>
+</html>

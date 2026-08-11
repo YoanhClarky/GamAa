@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corporate Dodger</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0a66c2;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+    font-weight: 700;
+  }
+  .subtitle {
+    opacity: 0.85;
+    font-size: 0.9rem;
+    margin-bottom: 14px;
+    text-align: center;
+    padding: 0 20px;
+  }
+  #gameWrap {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 3px solid #fff;
+  }
+  canvas {
+    display: block;
+    background: #ffffff;
+    touch-action: none;
+  }
+  #hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #0a66c2;
+    pointer-events: none;
+  }
+  #hud span { background: #ffffff; padding: 4px 12px; border-radius: 6px; border: 2px solid #0a66c2; }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: #0a66c2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    gap: 10px;
+  }
+  #overlay h2 { font-size: 1.4rem; }
+  #overlay p { opacity: 0.9; max-width: 300px; font-size: 0.9rem; line-height: 1.4; }
+  button {
+    margin-top: 10px;
+    background: #ffffff;
+    color: #0a66c2;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  button:active { transform: scale(0.95); }
+  .hidden { display: none !important; }
+  #controls {
+    margin-top: 14px;
+    font-size: 0.85rem;
+    color: #ffffff;
+    background: rgba(0,0,0,0.25);
+    padding: 6px 14px;
+    border-radius: 6px;
+    text-align: center;
+  }
+  #best { font-size: 0.85rem; opacity: 0.9; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Corporate Dodger</h1>
+<p class="subtitle">Esquive les <b>réunions inutiles</b>, attrape <b>promos</b>, <b>cafés</b> et <b>primes</b> !</p>
+
+<div id="gameWrap">
+  <canvas id="game" width="380" height="560"></canvas>
+  <div id="hud">
+    <span id="scoreDisplay">Score: 0</span>
+    <span id="levelDisplay">Niveau: Stagiaire</span>
+  </div>
+  <div id="overlay">
+    <h2 id="overlayTitle">Prêt à grimper l'échelle ?</h2>
+    <p id="overlayText">Utilise les flèches gauche/droite ou glisse le doigt pour esquiver les réunions et collecter les bonus de carrière. Combien de temps avant le burnout ?</p>
+    <button id="startBtn">Commencer la journée</button>
+    <div id="best"></div>
+  </div>
+</div>
+
+<div id="controls">← → ou glisser pour bouger • Espace pour rejouer</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const startBtn = document.getElementById('startBtn');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const levelDisplay = document.getElementById('levelDisplay');
+  const bestDisplay = document.getElementById('best');
+
+  const LANES = 3;
+  const laneWidth = W / LANES;
+  const player = { lane: 1, x: 0, y: H - 90, w: 46, h: 46, targetX: 0 };
+  player.x = laneWidth * player.lane + laneWidth/2 - player.w/2;
+  player.targetX = player.x;
+
+  let obstacles = [];
+  let score = 0;
+  let speed = 4;
+  let spawnTimer = 0;
+  let running = false;
+  let best = Number(localStorage.getItem('corpDodgerBest') || 0);
+
+  const levels = [
+    {score: 0, name: "Stagiaire"},
+    {score: 15, name: "Junior"},
+    {score: 35, name: "Confirmé"},
+    {score: 60, name: "Senior"},
+    {score: 90, name: "Lead"},
+    {score: 130, name: "Manager"},
+    {score: 180, name: "Directeur"},
+    {score: 250, name: "C-Level 🚀"}
+  ];
+
+  const goodTypes = [
+    {symbol:"+5", label:"Promo", points: 5, color:"#2e7d32"},
+    {symbol:"+2", label:"Café", points: 2, color:"#2e7d32"},
+    {symbol:"+8", label:"Prime", points: 8, color:"#2e7d32"},
+    {symbol:"+3", label:"Like", points: 3, color:"#2e7d32"}
+  ];
+  const badTypes = [
+    {symbol:"X", label:"Réunion"},
+    {symbol:"X", label:"Email"},
+    {symbol:"X", label:"Deadline"}
+  ];
+
+  function updateBestDisplay(){
+    bestDisplay.textContent = best > 0 ? `Meilleur score : ${best}` : "";
+  }
+  updateBestDisplay();
+
+  function currentLevel(){
+    let lvl = levels[0];
+    for (const l of levels) if (score >= l.score) lvl = l;
+    return lvl.name;
+  }
+
+  function resetGame(){
+    obstacles = [];
+    score = 0;
+    speed = 4;
+    spawnTimer = 0;
+    player.lane = 1;
+    player.x = laneWidth * player.lane + laneWidth/2 - player.w/2;
+    player.targetX = player.x;
+    scoreDisplay.textContent = "Score: 0";
+    levelDisplay.textContent = "Niveau: " + currentLevel();
+  }
+
+  function spawnObstacle(){
+    const lane = Math.floor(Math.random() * LANES);
+    const isBad = Math.random() < 0.55;
+    const type = isBad
+      ? badTypes[Math.floor(Math.random()*badTypes.length)]
+      : goodTypes[Math.floor(Math.random()*goodTypes.length)];
+    obstacles.push({
+      lane, y: -50, w: 44, h: 44,
+      bad: isBad, type
+    });
+  }
+
+  function laneX(lane){
+    return laneWidth * lane + laneWidth/2 - player.w/2;
+  }
+
+  function update(){
+    // smooth move
+    player.x += (player.targetX - player.x) * 0.25;
+
+    spawnTimer++;
+    const spawnRate = Math.max(28, 55 - Math.floor(score/8));
+    if (spawnTimer > spawnRate){
+      spawnTimer = 0;
+      spawnObstacle();
+    }
+
+    speed = 4 + score * 0.03;
+
+    for (let i = obstacles.length - 1; i >= 0; i--){
+      const o = obstacles[i];
+      o.y += speed;
+
+      const ox = laneX(o.lane);
+      // collision check
+      if (o.y + o.h > player.y && o.y < player.y + player.h &&
+          ox + o.w > player.x && ox < player.x + player.w){
+        if (o.bad){
+          gameOver();
+          return;
+        } else {
+          score += o.type.points;
+          obstacles.splice(i, 1);
+          scoreDisplay.textContent = "Score: " + score;
+          levelDisplay.textContent = "Niveau: " + currentLevel();
+          continue;
+        }
+      }
+
+      if (o.y > H + 60) obstacles.splice(i, 1);
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // lane separators
+    ctx.strokeStyle = "#e5e5e5";
+    ctx.lineWidth = 2;
+    for (let i=1;i<LANES;i++){
+      ctx.setLineDash([10,14]);
+      ctx.beginPath();
+      ctx.moveTo(laneWidth*i, 0);
+      ctx.lineTo(laneWidth*i, H);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // obstacles
+    obstacles.forEach(o => {
+      const ox = laneX(o.lane);
+      ctx.fillStyle = o.bad ? "#c0392b" : "#2e7d32";
+      roundRect(ctx, ox, o.y, o.w, o.h, 8);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 16px 'Segoe UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(o.type.symbol, ox + o.w/2, o.y + o.h/2 + 1);
+    });
+
+    // player
+    ctx.fillStyle = "#0a66c2";
+    roundRect(ctx, player.x, player.y, player.w, player.h, 8);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 14px 'Segoe UI', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("MOI", player.x + player.w/2, player.y + player.h/2 + 1);
+  }
+
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  let rafId;
+  function loop(){
+    if (!running) return;
+    update();
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function gameOver(){
+    running = false;
+    cancelAnimationFrame(rafId);
+    if (score > best){
+      best = score;
+      localStorage.setItem('corpDodgerBest', best);
+    }
+    updateBestDisplay();
+    const lvl = currentLevel();
+    overlayTitle.textContent = "Burnout ! Score : " + score;
+    overlayText.textContent = `Tu as atteint le niveau "${lvl}" avant de craquer. Réessaie pour grimper encore plus haut dans la hiérarchie !`;
+    startBtn.textContent = "Rejouer";
+    overlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    resetGame();
+    overlay.classList.add('hidden');
+    running = true;
+    loop();
+  }
+
+  startBtn.addEventListener('click', startGame);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && !running){ startGame(); return; }
+    if (!running) return;
+    if (e.key === 'ArrowLeft' && player.lane > 0){
+      player.lane--; player.targetX = laneX(player.lane);
+    } else if (e.key === 'ArrowRight' && player.lane < LANES-1){
+      player.lane++; player.targetX = laneX(player.lane);
+    }
+  });
+
+  // touch swipe controls
+  let touchStartX = null;
+  canvas.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+  }, {passive:true});
+  canvas.addEventListener('touchend', (e) => {
+    if (touchStartX === null || !running) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 30){
+      if (dx > 0 && player.lane < LANES-1){ player.lane++; }
+      else if (dx < 0 && player.lane > 0){ player.lane--; }
+      player.targetX = laneX(player.lane);
+    }
+    touchStartX = null;
+  }, {passive:true});
+
+  // click on canvas halves to move (desktop friendly too)
+  canvas.addEventListener('click', (e) => {
+    if (!running) return;
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    if (clickX < W/2 && player.lane > 0){ player.lane--; player.targetX = laneX(player.lane); }
+    else if (clickX >= W/2 && player.lane < LANES-1){ player.lane++; player.targetX = laneX(player.lane); }
+  });
+
+  draw();
+})();
+</script>
+
+</body>
+</html>
