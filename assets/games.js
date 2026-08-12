@@ -33,7 +33,7 @@ var GAMES = [
     "type": "Course",
     "description": "Un parcours rapide à travers les contraintes du quotidien.",
     "dev": "Yoanh Mantele",
-    "date": "11/08/2026",
+    "date": "12/08/2026",
     "href": "games/yoanh-mantele/en-route-boulot-libre.html"
   },
   {
