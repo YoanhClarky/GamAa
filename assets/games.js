@@ -13,6 +13,14 @@
 */
 var GAMES = [
   {
+    "title": "Vise 100",
+    "type": "Réflexe",
+    "description": "Arrête le chrono le plus près possible de 100.",
+    "dev": "Yoanh Mantele",
+    "date": "12/08/2026",
+    "href": "games/yoanh-mantele/vise-100.html"
+  },
+  {
     "title": "Corporate Dodger",
     "type": "Arcade",
     "description": "Esquive les obstacles et reste concentré.",
@@ -48,6 +56,20 @@ var GAMES = [
 
 var CONTRIBUTORS = [
   {
+    "slug": "DARKSOUL",
+    "name": "DARKSOUL",
+    "bio": "Je suis DARKSOUL",
+    "links": {
+      "github": "https://...",
+      "site": "https://...",
+      "twitter": "https://...",
+      "linkedin": "https://..."
+    },
+    "games": [
+      "Vise 100"
+    ]
+  },
+  {
     "slug": "yoanh-mantele",
     "name": "Yoanh Mantele",
     "bio": "Full-Stack Developer building products, SaaS and developer tools. Curious about AI, software architecture and new technologies.",
@@ -61,7 +83,8 @@ var CONTRIBUTORS = [
       "Corporate Dodger",
       "En Route pour le Boulot",
       "Le Délestage",
-      "Reproduis la Forme"
+      "Reproduis la Forme",
+      "Vise 100"
     ]
   }
 ];

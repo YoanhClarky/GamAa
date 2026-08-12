@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../assets/icon.png">
+<meta name="game:type" content="Réflexe">
+<meta name="game:description" content="Arrête le chrono le plus près possible de 100.">
+<meta name="game:dev" content="Yoanh Mantele">
+<meta name="game:date" content="12/08/2026">
+<title>Vise 100</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: #1c2b39;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    padding: 20px 10px;
+    user-select: none;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    margin-bottom: 2px;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    opacity: 0.85;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    text-align: center;
+    padding: 0 20px;
+    max-width: 380px;
+  }
+
+  #gameWrap {
+    position: relative;
+    width: 320px;
+    max-width: 90vw;
+    border-radius: 8px;
+    border: 3px solid #fff;
+    background: #16232f;
+    padding: 24px 16px;
+    text-align: center;
+  }
+
+  #counter {
+    font-size: 4rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  #counter.parfait { color: #f4b400; }
+
+  #message {
+    margin-top: 10px;
+    min-height: 1.3em;
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+
+  #stopBtn {
+    margin-top: 18px;
+    width: 100%;
+    background: #f4b400;
+    color: #1c2b39;
+    border: none;
+    padding: 16px;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  #stopBtn:active { transform: scale(0.97); }
+  #stopBtn:disabled { opacity: 0.5; cursor: default; }
+
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: #1c2b39;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    gap: 10px;
+  }
+  #overlay h2 { font-size: 1.4rem; }
+  #overlay p { opacity: 0.9; max-width: 260px; font-size: 0.9rem; line-height: 1.4; }
+
+  button.action {
+    margin-top: 10px;
+    background: #f4b400;
+    color: #1c2b39;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  button.action:active { transform: scale(0.95); }
+
+  .hidden { display: none !important; }
+
+  .game-layout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .game-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .leaderboard {
+    width: 220px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .leaderboard-header { margin-bottom: 10px; }
+  .leaderboard-header h2 { font-size: 1rem; margin: 0; }
+
+  .auth-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+  }
+  .auth-box span { overflow-wrap: anywhere; }
+
+  .auth-box input {
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: none;
+    width: 100%;
+  }
+  .auth-box button {
+    margin-top: 0;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    width: 100%;
+  }
+  .leaderboard-list {
+    list-style: decimal;
+    padding-left: 20px;
+    padding-right: 4px;
+    margin: 0;
+    font-size: 0.85rem;
+    display: grid;
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .leaderboard-list .leaderboard-empty {
+    list-style: none;
+    margin-left: -20px;
+    opacity: 0.7;
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>Vise 100</h1>
+
+<p class="subtitle">Le chrono défile vite de 0 à 100. Un seul clic sur Stop : ta précision devient ton score, 100 pile vaut 100%.</p>
+
+<div class="game-layout">
+  <div class="game-main">
+    <div id="gameWrap">
+      <div id="counter">0</div>
+      <div id="message">Appuie sur Démarrer pour jouer</div>
+      <button id="stopBtn" type="button" disabled>Stop</button>
+
+      <div id="overlay">
+        <h2 id="overlayTitle">Prêt à jouer ?</h2>
+        <p id="overlayText">Le chrono monte de 0 à 100 en boucle. Clique sur Stop au bon moment : ton score, c'est la valeur affichée à cet instant.</p>
+        <button class="action" id="startBtn" type="button">Démarrer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="leaderboard">
+    <div class="leaderboard-header">
+      <h2>Meilleurs scores</h2>
+      <div id="authBox" class="auth-box"></div>
+    </div>
+    <ol id="leaderboardList" class="leaderboard-list"></ol>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js" integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg" crossorigin="anonymous"></script>
+<script src="../../assets/supabase-config.js"></script>
+<script src="../../assets/leaderboard.js"></script>
+
+<script>
+(function () {
+  const counterEl = document.getElementById('counter');
+  const messageEl = document.getElementById('message');
+  const stopBtn = document.getElementById('stopBtn');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const startBtn = document.getElementById('startBtn');
+
+  const GAME_SLUG = location.pathname.split('/').pop().replace(/\.html$/, '');
+  const TARGET = 100;
+  const STEP_MS = 18;
+
+  let timerId = null;
+  let counterValue = 0;
+
+  function startGame() {
+    counterValue = 0;
+    counterEl.textContent = counterValue;
+    counterEl.classList.remove('parfait');
+    messageEl.textContent = 'Vise 100 !';
+    overlay.classList.add('hidden');
+    stopBtn.disabled = false;
+
+    timerId = setInterval(() => {
+      counterValue++;
+      if (counterValue > TARGET) counterValue = 0;
+      counterEl.textContent = counterValue;
+    }, STEP_MS);
+  }
+
+  async function stopGame() {
+    clearInterval(timerId);
+    stopBtn.disabled = true;
+
+    const finalScore = counterValue;
+
+    if (finalScore === TARGET) {
+      counterEl.classList.add('parfait');
+      messageEl.textContent = 'Pile 100 !';
+    } else {
+      messageEl.textContent = `Tu t'es arrêté à ${finalScore}.`;
+    }
+
+    const user = await Leaderboard.getCurrentUser();
+    const playerName = user ? (user.email || 'Joueur connecté') : (prompt('Ton pseudo pour le classement :') || 'Anonyme');
+    await Leaderboard.submitScore(GAME_SLUG, playerName, finalScore);
+    await refreshLeaderboard();
+
+    overlayTitle.textContent = finalScore === TARGET ? 'Score parfait : 100%' : `Score : ${finalScore}%`;
+    overlayText.textContent = finalScore === TARGET
+      ? 'Tu as arrêté le chrono pile sur 100.'
+      : `Tu t'es arrêté à ${finalScore}, à ${TARGET - finalScore} de la cible.`;
+    startBtn.textContent = 'Rejouer';
+    overlay.classList.remove('hidden');
+  }
+
+  startBtn.addEventListener('click', startGame);
+  stopBtn.addEventListener('click', stopGame);
+
+  function renderAuthBox(user) {
+    const authBox = document.getElementById('authBox');
+    if (user) {
+      authBox.innerHTML = `<span>${user.email}</span> <button id="signOutBtn" type="button">Déconnexion</button>`;
+      document.getElementById('signOutBtn').addEventListener('click', () => Leaderboard.signOut());
+      return;
+    }
+    authBox.innerHTML = `
+      <input id="authEmail" type="email" placeholder="Email pour garder ton score" />
+      <button id="signInBtn" type="button">Connexion</button>
+    `;
+    document.getElementById('signInBtn').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      if (!email) return;
+      const result = await Leaderboard.signInWithEmail(email);
+      authBox.innerHTML = result.success
+        ? '<span>Vérifie ta boîte mail pour le lien de connexion.</span>'
+        : `<span>${result.message}</span>`;
+    });
+  }
+
+  async function refreshLeaderboard() {
+    const scores = await Leaderboard.getTopScores(GAME_SLUG);
+    const list = document.getElementById('leaderboardList');
+    list.innerHTML = scores.length
+      ? scores.map((row) => `<li>${row.player_name} — ${row.score}</li>`).join('')
+      : '<li class="leaderboard-empty">Aucun score pour l\'instant, sois le premier !</li>';
+  }
+
+  Leaderboard.onAuthChange(renderAuthBox);
+  Leaderboard.getCurrentUser().then(renderAuthBox);
+  refreshLeaderboard();
+})();
+</script>
+
+</body>
+</html>
