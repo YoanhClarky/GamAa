@@ -14,8 +14,12 @@ const gamesDir = path.join(rootDir, 'games');
 const outputFile = path.join(rootDir, 'assets', 'games.js');
 
 function getAttr(tag, name) {
-  const match = tag.match(new RegExp(name + '\\s*=\\s*["\']([^"\']*)["\']', 'i'));
-  return match ? match[1] : null;
+  // On capture séparément la variante entre guillemets doubles et celle entre
+  // apostrophes, pour qu'une apostrophe (fréquente en français, ex. "l'écran")
+  // ne soit pas prise à tort pour la fin d'une valeur entre guillemets doubles.
+  const match = tag.match(new RegExp(name + '\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\')', 'i'));
+  if (!match) return null;
+  return match[1] !== undefined ? match[1] : match[2];
 }
 
 function readGame(devSlug, fileName) {

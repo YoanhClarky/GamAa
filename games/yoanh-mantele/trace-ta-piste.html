@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../assets/icon.png">
+<meta name="game:type" content="Simulation">
+<meta name="game:description" content="Dessine ta propre piste, lâche la bille et regarde-la dévaler la pente avec une vraie gravité.">
+<meta name="game:dev" content="Yoanh Mantele">
+<meta name="game:date" content="16/08/2026">
+<title>Trace ta Piste</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: #1c2b39;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    padding: 20px 10px;
+    user-select: none;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    margin-bottom: 2px;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    opacity: 0.85;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    text-align: center;
+    padding: 0 20px;
+    max-width: 420px;
+  }
+
+  #gameWrap {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 3px solid #fff;
+    background: #ffffff;
+  }
+
+  #game {
+    display: block;
+    touch-action: none;
+    max-width: 100%;
+    max-height: 55vh;
+    width: auto;
+    height: auto;
+    cursor: crosshair;
+  }
+
+  #controls, #endPanel {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  button {
+    background: #f4b400;
+    color: #1c2b39;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  button:active { transform: scale(0.96); }
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  button.secondary {
+    background: transparent;
+    border: 1px solid #fff;
+    color: #fff;
+  }
+
+  #hud {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+
+  #endPanel {
+    flex-direction: column;
+    align-items: center;
+  }
+  #endPanel p {
+    font-size: 0.95rem;
+    opacity: 0.9;
+  }
+  #endPanel .row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .hidden { display: none !important; }
+
+  .game-layout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .game-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .leaderboard {
+    width: 220px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .leaderboard-header { margin-bottom: 10px; }
+  .leaderboard-header h2 { font-size: 1rem; margin: 0; }
+
+  .auth-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+  }
+  .auth-box span { overflow-wrap: anywhere; }
+  .auth-box input {
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: none;
+    width: 100%;
+  }
+  .auth-box button {
+    margin-top: 0;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    width: 100%;
+  }
+  .leaderboard-list {
+    list-style: decimal;
+    padding-left: 20px;
+    padding-right: 4px;
+    margin: 0;
+    font-size: 0.85rem;
+    display: grid;
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .leaderboard-list .leaderboard-empty {
+    list-style: none;
+    margin-left: -20px;
+    opacity: 0.7;
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>Trace ta Piste</h1>
+<p class="subtitle">Dessine une piste à la souris ou au doigt sur la zone blanche, puis lâche la bille : elle roule avec une vraie gravité. Ton score, c'est la distance parcourue avant qu'elle ne sorte de l'écran.</p>
+
+<div class="game-layout">
+  <div class="game-main">
+    <div id="gameWrap">
+      <canvas id="game" width="480" height="360"></canvas>
+    </div>
+
+    <div id="controls">
+      <button id="startBtn" type="button">Lâcher la bille</button>
+      <button id="clearBtn" type="button" class="secondary">Effacer la piste</button>
+    </div>
+
+    <div id="hud" class="hidden">
+      <span>Distance : <span id="scoreDisplay">0</span></span>
+    </div>
+
+    <div id="endPanel" class="hidden">
+      <p id="endText"></p>
+      <div class="row">
+        <button id="retryBtn" type="button">Rejouer (même piste)</button>
+        <button id="newTrackBtn" type="button" class="secondary">Nouvelle piste</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="leaderboard">
+    <div class="leaderboard-header">
+      <h2>Meilleurs scores</h2>
+      <div id="authBox" class="auth-box"></div>
+    </div>
+    <ol id="leaderboardList" class="leaderboard-list"></ol>
+  </div>
+</div>
+
+<!--
+  Classement partagé (optionnel) : voir documentation.html > "Classements et
+  connexion optionnelle". Sans configuration Supabase, le jeu reste jouable,
+  seul le classement est indisponible.
+-->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js" integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg" crossorigin="anonymous"></script>
+<script src="../../assets/supabase-config.js"></script>
+<script src="../../assets/leaderboard.js"></script>
+
+<script>
+(function () {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  const startBtn = document.getElementById('startBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const hud = document.getElementById('hud');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const endPanel = document.getElementById('endPanel');
+  const endText = document.getElementById('endText');
+  const retryBtn = document.getElementById('retryBtn');
+  const newTrackBtn = document.getElementById('newTrackBtn');
+
+  const GAME_SLUG = location.pathname.split('/').pop().replace(/\.html$/, '');
+
+  const START = { x: 40, y: 30 };
+  const RADIUS = 8;
+  const GRAVITY = 0.6;
+  const RESTITUTION = 0.4;
+  const FRICTION = 0.02;
+  const SUBSTEPS = 8;
+  const STUCK_LIMIT = 90;
+
+  let strokes = [];
+  let segments = [];
+  let isDrawing = false;
+  let currentStroke = null;
+
+  let state = 'draw'; // 'draw' | 'running' | 'ended'
+  let ball = { x: START.x, y: START.y, vx: 0, vy: 0 };
+  let distance = 0;
+  let stuckFrames = 0;
+  let rafId = null;
+
+  function getPos(evt) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (evt.clientX - rect.left) * scaleX,
+      y: (evt.clientY - rect.top) * scaleY
+    };
+  }
+
+  canvas.addEventListener('pointerdown', (evt) => {
+    if (state !== 'draw') return;
+    isDrawing = true;
+    currentStroke = [getPos(evt)];
+    strokes.push(currentStroke);
+    canvas.setPointerCapture(evt.pointerId);
+  });
+
+  canvas.addEventListener('pointermove', (evt) => {
+    if (!isDrawing || state !== 'draw') return;
+    const pos = getPos(evt);
+    const last = currentStroke[currentStroke.length - 1];
+    const dx = pos.x - last.x, dy = pos.y - last.y;
+    if (dx * dx + dy * dy > 9) {
+      currentStroke.push(pos);
+      redrawStatic();
+    }
+  });
+
+  window.addEventListener('pointerup', () => {
+    isDrawing = false;
+    currentStroke = null;
+  });
+
+  function buildSegments() {
+    segments = [];
+    strokes.forEach((stroke) => {
+      for (let i = 1; i < stroke.length; i++) {
+        segments.push({ x1: stroke[i - 1].x, y1: stroke[i - 1].y, x2: stroke[i].x, y2: stroke[i].y });
+      }
+    });
+  }
+
+  function closestPointOnSegment(px, py, seg) {
+    const dx = seg.x2 - seg.x1, dy = seg.y2 - seg.y1;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return { x: seg.x1, y: seg.y1 };
+    let t = ((px - seg.x1) * dx + (py - seg.y1) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    return { x: seg.x1 + t * dx, y: seg.y1 + t * dy };
+  }
+
+  function physicsStep() {
+    const sub = 1 / SUBSTEPS;
+    for (let s = 0; s < SUBSTEPS; s++) {
+      const prevX = ball.x, prevY = ball.y;
+      ball.vy += GRAVITY * sub;
+      ball.x += ball.vx * sub;
+      ball.y += ball.vy * sub;
+
+      for (const seg of segments) {
+        const cp = closestPointOnSegment(ball.x, ball.y, seg);
+        const dx = ball.x - cp.x, dy = ball.y - cp.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < RADIUS && dist > 0.0001) {
+          const nx = dx / dist, ny = dy / dist;
+          const penetration = RADIUS - dist;
+          ball.x += nx * penetration;
+          ball.y += ny * penetration;
+
+          const vn = ball.vx * nx + ball.vy * ny;
+          if (vn < 0) {
+            ball.vx -= (1 + RESTITUTION) * vn * nx;
+            ball.vy -= (1 + RESTITUTION) * vn * ny;
+          }
+
+          const tx = -ny, ty = nx;
+          const vt = ball.vx * tx + ball.vy * ty;
+          ball.vx -= tx * vt * FRICTION;
+          ball.vy -= ty * vt * FRICTION;
+        }
+      }
+
+      distance += Math.hypot(ball.x - prevX, ball.y - prevY);
+    }
+
+    if (Math.hypot(ball.vx, ball.vy) < 0.05) stuckFrames++;
+    else stuckFrames = 0;
+  }
+
+  function isOutOfBounds() {
+    return ball.y > H + 60 || ball.x < -60 || ball.x > W + 60;
+  }
+
+  function drawTrack() {
+    ctx.strokeStyle = '#1c2b39';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    strokes.forEach((stroke) => {
+      if (stroke.length < 2) return;
+      ctx.beginPath();
+      ctx.moveTo(stroke[0].x, stroke[0].y);
+      for (let i = 1; i < stroke.length; i++) ctx.lineTo(stroke[i].x, stroke[i].y);
+      ctx.stroke();
+    });
+  }
+
+  function drawStartMarker() {
+    ctx.beginPath();
+    ctx.arc(START.x, START.y, RADIUS + 4, 0, Math.PI * 2);
+    ctx.strokeStyle = '#f4b400';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function drawBall(x, y) {
+    ctx.beginPath();
+    ctx.arc(x, y, RADIUS, 0, Math.PI * 2);
+    ctx.fillStyle = '#f4b400';
+    ctx.fill();
+    ctx.strokeStyle = '#1c2b39';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function redrawStatic() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    drawTrack();
+    drawStartMarker();
+    drawBall(START.x, START.y);
+  }
+
+  function redrawDynamic() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    drawTrack();
+    drawStartMarker();
+    drawBall(ball.x, ball.y);
+  }
+
+  function loop() {
+    if (state !== 'running') return;
+    physicsStep();
+    redrawDynamic();
+    scoreDisplay.textContent = Math.round(distance / 10);
+
+    if (isOutOfBounds() || stuckFrames > STUCK_LIMIT) {
+      endRun();
+      return;
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function startRun() {
+    buildSegments();
+    ball = { x: START.x, y: START.y, vx: 0, vy: 0 };
+    distance = 0;
+    stuckFrames = 0;
+    state = 'running';
+    startBtn.disabled = true;
+    clearBtn.disabled = true;
+    hud.classList.remove('hidden');
+    endPanel.classList.add('hidden');
+    loop();
+  }
+
+  async function endRun() {
+    state = 'ended';
+    cancelAnimationFrame(rafId);
+    const finalScore = Math.round(distance / 10);
+
+    const user = await Leaderboard.getCurrentUser();
+    const playerName = user ? (user.email || 'Joueur connecté') : (prompt('Ton pseudo pour le classement :') || 'Anonyme');
+    await Leaderboard.submitScore(GAME_SLUG, playerName, finalScore);
+    await refreshLeaderboard();
+
+    endText.textContent = `Distance parcourue : ${finalScore}`;
+    hud.classList.add('hidden');
+    endPanel.classList.remove('hidden');
+  }
+
+  startBtn.addEventListener('click', startRun);
+  clearBtn.addEventListener('click', () => {
+    strokes = [];
+    redrawStatic();
+  });
+  retryBtn.addEventListener('click', () => {
+    endPanel.classList.add('hidden');
+    startBtn.disabled = false;
+    clearBtn.disabled = false;
+    startRun();
+  });
+  newTrackBtn.addEventListener('click', () => {
+    strokes = [];
+    state = 'draw';
+    startBtn.disabled = false;
+    clearBtn.disabled = false;
+    endPanel.classList.add('hidden');
+    redrawStatic();
+  });
+
+  // --- Connexion optionnelle + classement ---
+
+  function renderAuthBox(user) {
+    const authBox = document.getElementById('authBox');
+    if (user) {
+      authBox.innerHTML = `<span>${user.email}</span> <button id="signOutBtn" type="button">Déconnexion</button>`;
+      document.getElementById('signOutBtn').addEventListener('click', () => Leaderboard.signOut());
+      return;
+    }
+    authBox.innerHTML = `
+      <input id="authEmail" type="email" placeholder="Email pour garder ton score" />
+      <button id="signInBtn" type="button">Connexion</button>
+    `;
+    document.getElementById('signInBtn').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      if (!email) return;
+      const result = await Leaderboard.signInWithEmail(email);
+      authBox.innerHTML = result.success
+        ? '<span>Vérifie ta boîte mail pour le lien de connexion.</span>'
+        : `<span>${result.message}</span>`;
+    });
+  }
+
+  async function refreshLeaderboard() {
+    const scores = await Leaderboard.getTopScores(GAME_SLUG);
+    const list = document.getElementById('leaderboardList');
+    list.innerHTML = scores.length
+      ? scores.map((row) => `<li>${row.player_name} — ${row.score}</li>`).join('')
+      : '<li class="leaderboard-empty">Aucun score pour l\'instant, sois le premier !</li>';
+  }
+
+  Leaderboard.onAuthChange(renderAuthBox);
+  Leaderboard.getCurrentUser().then(renderAuthBox);
+  refreshLeaderboard();
+
+  redrawStatic();
+})();
+</script>
+
+</body>
+</html>

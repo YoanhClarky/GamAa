@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../assets/icon.png">
+<meta name="game:type" content="Exploration">
+<meta name="game:description" content="Choisis ta difficulté et explore en solo ou en temps réel avec d'autres joueurs un labyrinthe en fausse 3D, façon donjon éclairé à la torche.">
+<meta name="game:dev" content="Yoanh Mantele">
+<meta name="game:date" content="16/08/2026">
+<title>Le Dédale</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: #1c2b39;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    padding: 20px 10px;
+    user-select: none;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    margin-bottom: 2px;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    opacity: 0.85;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    text-align: center;
+    padding: 0 20px;
+    max-width: 420px;
+  }
+
+  #gameWrap {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 3px solid #fff;
+    background: #000;
+  }
+
+  #game {
+    display: block;
+    max-width: 100%;
+    max-height: 50vh;
+    width: auto;
+    height: auto;
+  }
+
+  #minimap {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 96px;
+    height: 96px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+
+  #chatMenu {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(28, 43, 57, 0.92);
+    border-radius: 8px;
+    padding: 8px;
+  }
+  #chatMenu button {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    background: transparent;
+    border: 1px solid #fff;
+    color: #fff;
+  }
+
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: #1c2b39;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    gap: 10px;
+    overflow-y: auto;
+  }
+  #overlay h2 { font-size: 1.4rem; flex-shrink: 0; }
+  #overlay p { opacity: 0.9; max-width: 300px; font-size: 0.9rem; line-height: 1.4; flex-shrink: 0; }
+
+  .diff-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 4px;
+  }
+  .diff-btn {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+  .diff-btn.secondary {
+    background: transparent;
+    border: 1px solid #fff;
+    color: #fff;
+  }
+  .mp-hint {
+    font-size: 0.75rem !important;
+    opacity: 0.7;
+    margin-top: 2px !important;
+  }
+  #mpBtn {
+    margin-top: 2px;
+    background: transparent;
+    border: 1px solid #f4b400;
+    color: #f4b400;
+  }
+
+  button {
+    background: #f4b400;
+    color: #1c2b39;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  button:active { transform: scale(0.96); }
+
+  #hud {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.85rem;
+    margin-top: 10px;
+    opacity: 0.9;
+  }
+
+  #touchControls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  #touchControls button {
+    background: transparent;
+    border: 1px solid #fff;
+    color: #fff;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    touch-action: none;
+  }
+  #touchControls #btnForward {
+    background: #f4b400;
+    color: #1c2b39;
+    border: none;
+  }
+  #touchControls #btnFire {
+    background: transparent;
+    border: 1px solid #12e9cc;
+    color: #12e9cc;
+  }
+
+  #endBtn {
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid #fff;
+    color: #fff;
+    padding: 8px 18px;
+    font-size: 0.85rem;
+  }
+
+  .hidden { display: none !important; }
+
+  .game-layout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .game-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .leaderboard {
+    width: 220px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .leaderboard-header { margin-bottom: 10px; }
+  .leaderboard-header h2 { font-size: 1rem; margin: 0; }
+
+  .auth-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+  }
+  .auth-box span { overflow-wrap: anywhere; }
+  .auth-box input {
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: none;
+    width: 100%;
+  }
+  .auth-box button {
+    margin-top: 0;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    width: 100%;
+  }
+  .leaderboard-list {
+    list-style: decimal;
+    padding-left: 20px;
+    padding-right: 4px;
+    margin: 0;
+    font-size: 0.85rem;
+    display: grid;
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .leaderboard-list .leaderboard-empty {
+    list-style: none;
+    margin-left: -20px;
+    opacity: 0.7;
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>Le Dédale</h1>
+<p class="subtitle">Un nouveau labyrinthe est généré à chaque partie. Flèches/WASD pour avancer et tourner, molette (ou boutons Haut/Bas) pour regarder en haut/bas. Ramasse le plus de points ambrés possible et rejoins la sortie, signalée par une colonne de lumière verte en ligne de vue dégagée.</p>
+
+<div class="game-layout">
+  <div class="game-main">
+    <div id="gameWrap">
+      <canvas id="game" width="400" height="300"></canvas>
+      <canvas id="minimap" width="96" height="96"></canvas>
+      <div id="chatMenu" class="hidden">
+        <button type="button" data-msg="Salut !">Salut !</button>
+        <button type="button" data-msg="Par ici !">Par ici !</button>
+        <button type="button" data-msg="Attention !">Attention !</button>
+        <button type="button" data-msg="À l'aide !">À l'aide !</button>
+        <button type="button" data-msg="Bien joué !">Bien joué !</button>
+        <button type="button" data-msg="Sortie par là !">Sortie par là !</button>
+      </div>
+      <div id="overlay">
+        <h2 id="overlayTitle">Prêt à explorer ?</h2>
+        <p id="overlayText">Choisis ta difficulté :</p>
+        <div class="diff-row">
+          <button class="diff-btn secondary" type="button" data-diff="facile">Facile</button>
+          <button class="diff-btn" type="button" data-diff="moyen">Moyen</button>
+          <button class="diff-btn secondary" type="button" data-diff="difficile">Difficile</button>
+        </div>
+        <button id="mpBtn" type="button">Multijoueur (carte Difficile, temps réel)</button>
+        <p class="mp-hint">Multijoueur : labyrinthe partagé (renouvelé toutes les 15 min), joueurs visibles en direct, chacun son score. "Tirer" étourdit sans conséquence ; "Parler" (touches 1-6) envoie un message rapide.</p>
+      </div>
+    </div>
+
+    <div id="hud">
+      <span>Points : <span id="scoreDisplay">0</span></span>
+      <span>Temps : <span id="timeDisplay">0.0s</span></span>
+      <span id="mpHud" class="hidden">En ligne : <span id="playerCountDisplay">1</span></span>
+      <span id="chatStatus" class="hidden"></span>
+    </div>
+
+    <div id="touchControls">
+      <button id="btnLeft" type="button">Gauche</button>
+      <button id="btnForward" type="button">Avancer</button>
+      <button id="btnRight" type="button">Droite</button>
+      <button id="btnLookUp" type="button">Haut</button>
+      <button id="btnLookDown" type="button">Bas</button>
+      <button id="btnFire" type="button" class="hidden">Tirer</button>
+      <button id="btnChat" type="button" class="hidden">Parler</button>
+    </div>
+
+    <button id="endBtn" class="hidden" type="button">Abandonner</button>
+  </div>
+
+  <div class="leaderboard">
+    <div class="leaderboard-header">
+      <h2>Meilleurs scores</h2>
+      <div id="authBox" class="auth-box"></div>
+    </div>
+    <ol id="leaderboardList" class="leaderboard-list"></ol>
+  </div>
+</div>
+
+<!--
+  Classement partagé (optionnel) : voir documentation.html > "Classements et
+  connexion optionnelle". Sans configuration Supabase, le jeu reste jouable,
+  seul le classement est indisponible.
+
+  Multijoueur temps réel (optionnel, propre à ce jeu) : utilise Supabase
+  Realtime (broadcast + presence) pour partager les positions des joueurs.
+  Aucune table supplémentaire : c'est un canal éphémère, rien n'est stocké en
+  base. Si Realtime n'est pas disponible sur le projet Supabase configuré,
+  le mode multijoueur ne montre simplement aucun autre joueur, le jeu reste
+  jouable normalement.
+-->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js" integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg" crossorigin="anonymous"></script>
+<script src="../../assets/supabase-config.js"></script>
+<script src="../../assets/leaderboard.js"></script>
+
+<script>
+(function () {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const miniCanvas = document.getElementById('minimap');
+  const mctx = miniCanvas.getContext('2d');
+
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const diffBtns = document.querySelectorAll('.diff-btn');
+  const mpBtn = document.getElementById('mpBtn');
+  const mpHud = document.getElementById('mpHud');
+  const playerCountDisplay = document.getElementById('playerCountDisplay');
+  const endBtn = document.getElementById('endBtn');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const timeDisplay = document.getElementById('timeDisplay');
+  const btnLeft = document.getElementById('btnLeft');
+  const btnRight = document.getElementById('btnRight');
+  const btnForward = document.getElementById('btnForward');
+  const btnLookUp = document.getElementById('btnLookUp');
+  const btnLookDown = document.getElementById('btnLookDown');
+  const btnFire = document.getElementById('btnFire');
+  const btnChat = document.getElementById('btnChat');
+  const chatMenu = document.getElementById('chatMenu');
+  const chatMsgBtns = chatMenu.querySelectorAll('button');
+  const chatStatus = document.getElementById('chatStatus');
+
+  const GAME_SLUG = location.pathname.split('/').pop().replace(/\.html$/, '');
+
+  const DIFFICULTIES = {
+    facile: { label: 'Facile', rooms: 5, coins: 5 },
+    moyen: { label: 'Moyen', rooms: 8, coins: 8 },
+    difficile: { label: 'Difficile', rooms: 18, coins: 18 }
+  };
+  let difficulty = DIFFICULTIES.moyen;
+  let ROOMS, GRID, COIN_COUNT;
+
+  const FOV = 66 * Math.PI / 180;
+  const projPlaneDist = (W / 2) / Math.tan(FOV / 2);
+  const MOVE_SPEED = 2.4;
+  const ROT_SPEED = 2.2;
+  const COLLISION_RADIUS = 0.25;
+  const RAY_SAFETY = 200;
+  const BEACON_HEIGHT = 20;
+  const REVEAL_RADIUS = 2;
+
+  // Vue haut/bas (molette ou boutons tactiles) : ce moteur reste un
+  // raycasting à plan horizontal fixe (comme les jeux qui l'ont inspiré),
+  // pas une vraie 3D. On simule l'inclinaison en décalant tout le rendu
+  // verticalement plutôt qu'en recalculant une vraie perspective.
+  const PITCH_MAX = 90;
+  const PITCH_WHEEL_SENS = 0.15;
+  const PITCH_TOUCH_SPEED = 70;
+
+  // Tir + étourdissement léger (multijoueur uniquement) : sans serveur
+  // autoritaire, tout repose sur la confiance entre clients — acceptable
+  // pour un effet cosmétique à faible enjeu (pas de mort, pas de perte de
+  // score), pas pour un vrai PvP compétitif.
+  const SHOT_RANGE = 8;
+  const SHOT_COOLDOWN = 0.6;
+  const SHOT_CONE = 0.07;
+  const STUN_DURATION = 3;
+  const STUN_SPEED_FACTOR = 0.35;
+
+  // Messages prédéfinis (multijoueur) : pas de champ libre, pour éviter
+  // tout risque d'abus entre inconnus alors qu'il n'y a aucune modération
+  // possible côté serveur (pas de compte fiable, pas de backend).
+  const QUICK_MESSAGES = ['Salut !', 'Par ici !', 'Attention !', "À l'aide !", 'Bien joué !', 'Sortie par là !'];
+  const SAY_DURATION = 3;
+  let chatStatusTimer = null;
+
+  let grid, exitCell, exit, player, coins, revealed;
+  let coinsCollected = 0;
+  let elapsed = 0;
+  let lastTs = null;
+  let running = false;
+  let rafId = null;
+  let zbuffer = new Array(W);
+
+  let inputForward = 0;
+  let inputRotate = 0;
+  let inputPitch = 0;
+  let pitch = 0;
+  let lastShotTime = -999;
+  let muzzleFlashUntil = -999;
+  let stunUntil = -999;
+
+  // Générateur pseudo-aléatoire à graine : en solo, on repart de Math.random
+  // à chaque partie ; en multijoueur, la graine est partagée par tous les
+  // joueurs pour que tout le monde génère exactement le même labyrinthe.
+  let rand = Math.random;
+
+  function hashSeed(str) {
+    let h = 1779033703;
+    for (let i = 0; i < str.length; i++) {
+      h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return (h ^ (h >>> 16)) >>> 0;
+  }
+
+  function mulberry32(seed) {
+    let state = seed;
+    return function () {
+      state = (state + 0x6d2b79f5) | 0;
+      let t = Math.imul(state ^ (state >>> 15), 1 | state);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // --- Multijoueur en temps réel (Supabase Realtime, sans nouvelle table) ---
+  // Une fenêtre trop courte (l'ancienne valeur était 15 min) fait courir le
+  // risque que deux joueurs qui testent à quelques minutes d'écart tombent
+  // dans deux salons différents sans aucun indice visible — ils ne se
+  // voient jamais, et rien (chat, notifs d'arrivée/départ) ne peut marcher.
+  const MP_ROUND_MS = 60 * 60 * 1000;
+  const MP_STALE_S = 5;
+  let mpActive = false;
+  let mpChannel = null;
+  let mpReady = false;
+  let mpClientId = null;
+  let mpDisplayName = '';
+  let mpBroadcastTimer = null;
+  let remotePlayers = {};
+
+  function getRoundId() {
+    return Math.floor(Date.now() / MP_ROUND_MS);
+  }
+
+  async function startMultiplayer() {
+    const user = await Leaderboard.getCurrentUser();
+    mpDisplayName = (user ? (user.email || '').split('@')[0] : (prompt('Ton pseudo pour la partie multijoueur :') || 'Joueur')).slice(0, 16);
+    mpClientId = mpDisplayName + '-' + Math.random().toString(36).slice(2, 8);
+
+    mpActive = true;
+    const roundId = getRoundId();
+    rand = mulberry32(hashSeed('dedale-mp-' + roundId));
+
+    mpHud.classList.remove('hidden');
+    btnFire.classList.remove('hidden');
+    btnChat.classList.remove('hidden');
+    playerCountDisplay.textContent = '1';
+
+    difficulty = DIFFICULTIES.difficile;
+    startGame();
+    joinRealtimeRoom(roundId);
+  }
+
+  function joinRealtimeRoom(roundId) {
+    leaveRealtimeRoom();
+    try {
+      const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      mpChannel = client.channel('dedale-mp-' + roundId, {
+        config: { presence: { key: mpClientId } }
+      });
+
+      mpChannel.on('broadcast', { event: 'pos' }, ({ payload }) => {
+        if (!payload || payload.id === mpClientId) return;
+        // On fusionne plutôt que remplacer : ne pas effacer un message
+        // ("say") en cours d'affichage à cause d'une mise à jour de position.
+        const existing = remotePlayers[payload.id] || {};
+        remotePlayers[payload.id] = { ...existing, x: payload.x, y: payload.y, angle: payload.angle, name: payload.name, lastSeen: elapsed };
+      });
+      mpChannel.on('broadcast', { event: 'hit' }, ({ payload }) => {
+        if (payload && payload.targetId === mpClientId) stunUntil = elapsed + STUN_DURATION;
+      });
+      mpChannel.on('broadcast', { event: 'say' }, ({ payload }) => {
+        if (!payload || payload.id === mpClientId) return;
+        const existing = remotePlayers[payload.id] || { lastSeen: elapsed };
+        remotePlayers[payload.id] = { ...existing, say: { text: payload.text, until: elapsed + SAY_DURATION } };
+      });
+      mpChannel.on('presence', { event: 'sync' }, () => {
+        try {
+          playerCountDisplay.textContent = Object.keys(mpChannel.presenceState()).length;
+        } catch (err) { /* classement/présence indisponible, le jeu reste jouable */ }
+      });
+      mpChannel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        if (key === mpClientId) return;
+        const name = (newPresences && newPresences[0] && newPresences[0].name) || 'Un joueur';
+        showStatus(`${name} a rejoint la partie`);
+      });
+      mpChannel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        const name = (remotePlayers[key] && remotePlayers[key].name)
+          || (leftPresences && leftPresences[0] && leftPresences[0].name)
+          || 'Un joueur';
+        delete remotePlayers[key];
+        showStatus(`${name} a quitté la partie`);
+      });
+      mpChannel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          mpReady = true;
+          mpChannel.track({ name: mpDisplayName });
+        }
+      });
+
+      mpBroadcastTimer = setInterval(() => {
+        if (!running || !mpReady || !mpChannel) return;
+        mpChannel.send({
+          type: 'broadcast',
+          event: 'pos',
+          payload: { id: mpClientId, x: player.x, y: player.y, angle: player.angle, name: mpDisplayName }
+        });
+      }, 120);
+    } catch (err) {
+      console.warn('Multijoueur : Realtime indisponible, partie jouable en solo.', err.message);
+    }
+  }
+
+  function leaveRealtimeRoom() {
+    if (mpBroadcastTimer) clearInterval(mpBroadcastTimer);
+    mpBroadcastTimer = null;
+    mpReady = false;
+    if (mpChannel) {
+      try { mpChannel.unsubscribe(); } catch (err) { /* déjà fermé */ }
+      mpChannel = null;
+    }
+    remotePlayers = {};
+  }
+
+  function generateMaze() {
+    // Prim aléatoire plutôt qu'un simple backtracker récursif : ce dernier
+    // produit de longs couloirs directs avec peu d'embranchements (le chemin
+    // "se voit" trop facilement). Prim crée beaucoup plus d'impasses courtes
+    // à chaque carrefour, donc de vrais faux chemins pour le joueur.
+    grid = Array.from({ length: GRID }, () => Array(GRID).fill(1));
+    const visited = Array.from({ length: ROOMS }, () => Array(ROOMS).fill(false));
+    const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+    function addFrontier(frontier, cx, cy) {
+      DIRS.forEach(([dx, dy]) => {
+        const nx = cx + dx, ny = cy + dy;
+        if (nx >= 0 && nx < ROOMS && ny >= 0 && ny < ROOMS && !visited[ny][nx]) {
+          frontier.push({ cx, cy, nx, ny, dx, dy });
+        }
+      });
+    }
+
+    visited[0][0] = true;
+    grid[1][1] = 0;
+    const frontier = [];
+    addFrontier(frontier, 0, 0);
+
+    while (frontier.length) {
+      const idx = Math.floor(rand() * frontier.length);
+      const edge = frontier[idx];
+      frontier.splice(idx, 1);
+      if (visited[edge.ny][edge.nx]) continue;
+
+      visited[edge.ny][edge.nx] = true;
+      grid[edge.cy * 2 + 1 + edge.dy][edge.cx * 2 + 1 + edge.dx] = 0;
+      grid[edge.ny * 2 + 1][edge.nx * 2 + 1] = 0;
+      addFrontier(frontier, edge.nx, edge.ny);
+    }
+  }
+
+  // Brouillard de guerre : la mini-carte ne montre que les zones déjà
+  // explorées (rayon autour du joueur, façon éclairage à la torche), pas
+  // tout le labyrinthe d'un coup — sinon la structure du labyrinthe n'a
+  // plus vraiment d'importance.
+  function revealAround(px, py) {
+    const cx = Math.round(px), cy = Math.round(py);
+    for (let dy = -REVEAL_RADIUS; dy <= REVEAL_RADIUS; dy++) {
+      for (let dx = -REVEAL_RADIUS; dx <= REVEAL_RADIUS; dx++) {
+        if (dx * dx + dy * dy > REVEAL_RADIUS * REVEAL_RADIUS) continue;
+        const gx = cx + dx, gy = cy + dy;
+        if (gx >= 0 && gy >= 0 && gx < GRID && gy < GRID) revealed[gy][gx] = true;
+      }
+    }
+  }
+
+  function isWall(gx, gy) {
+    const mx = Math.floor(gx), my = Math.floor(gy);
+    if (mx < 0 || my < 0 || mx >= GRID || my >= GRID) return true;
+    return grid[my][mx] === 1;
+  }
+
+  function canStand(x, y) {
+    const r = COLLISION_RADIUS;
+    return !isWall(x - r, y) && !isWall(x + r, y) && !isWall(x, y - r) && !isWall(x, y + r);
+  }
+
+  function movePlayer(forwardAmount, dt) {
+    const moveX = Math.cos(player.angle) * forwardAmount * MOVE_SPEED * dt;
+    const moveY = Math.sin(player.angle) * forwardAmount * MOVE_SPEED * dt;
+    const nx = player.x + moveX;
+    const ny = player.y + moveY;
+    if (canStand(nx, player.y)) player.x = nx;
+    if (canStand(player.x, ny)) player.y = ny;
+  }
+
+  // Tir instantané (hitscan) : vise le joueur le plus proche dans un cône
+  // étroit droit devant, à portée, et non caché par un mur (même test
+  // d'occlusion que l'affichage des sprites via zbuffer). Sans serveur
+  // autoritaire, c'est la cible qui décide elle-même d'appliquer son propre
+  // étourdissement en recevant l'événement — accepté comme limite connue.
+  function fire() {
+    if (!running || !mpActive || !mpChannel || !mpReady) return;
+    if (elapsed - lastShotTime < SHOT_COOLDOWN) return;
+    lastShotTime = elapsed;
+    muzzleFlashUntil = elapsed + 0.12;
+
+    let targetId = null, bestDist = Infinity;
+    Object.entries(remotePlayers).forEach(([id, p]) => {
+      const dx = p.x - player.x, dy = p.y - player.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > SHOT_RANGE || dist >= bestDist) return;
+      let angleTo = Math.atan2(dy, dx) - player.angle;
+      while (angleTo > Math.PI) angleTo -= Math.PI * 2;
+      while (angleTo < -Math.PI) angleTo += Math.PI * 2;
+      if (Math.abs(angleTo) > SHOT_CONE) return;
+      const col = Math.round(((angleTo + FOV / 2) / FOV) * W);
+      if (col < 0 || col >= W || dist > zbuffer[col]) return;
+      bestDist = dist;
+      targetId = id;
+    });
+
+    if (targetId) {
+      mpChannel.send({ type: 'broadcast', event: 'hit', payload: { targetId, from: mpClientId } });
+    }
+  }
+
+  // Petit statut temporaire dans le HUD, réutilisé pour "Toi : ..." après
+  // l'envoi d'un message rapide, et pour les annonces d'arrivée/départ.
+  function showStatus(text, durationS) {
+    chatStatus.textContent = text;
+    chatStatus.classList.remove('hidden');
+    clearTimeout(chatStatusTimer);
+    chatStatusTimer = setTimeout(() => chatStatus.classList.add('hidden'), (durationS || SAY_DURATION) * 1000);
+  }
+
+  function sendQuickMessage(text) {
+    if (!running || !mpActive || !mpChannel || !mpReady) return;
+    chatMenu.classList.add('hidden');
+    mpChannel.send({ type: 'broadcast', event: 'say', payload: { id: mpClientId, text } });
+    showStatus(`Toi : ${text}`);
+  }
+
+  function castRay(rayAngle) {
+    const rayDirX = Math.cos(rayAngle);
+    const rayDirY = Math.sin(rayAngle);
+    let mapX = Math.floor(player.x);
+    let mapY = Math.floor(player.y);
+
+    const deltaDistX = rayDirX === 0 ? 1e30 : Math.abs(1 / rayDirX);
+    const deltaDistY = rayDirY === 0 ? 1e30 : Math.abs(1 / rayDirY);
+
+    let stepX, stepY, sideDistX, sideDistY;
+    if (rayDirX < 0) { stepX = -1; sideDistX = (player.x - mapX) * deltaDistX; }
+    else { stepX = 1; sideDistX = (mapX + 1 - player.x) * deltaDistX; }
+    if (rayDirY < 0) { stepY = -1; sideDistY = (player.y - mapY) * deltaDistY; }
+    else { stepY = 1; sideDistY = (mapY + 1 - player.y) * deltaDistY; }
+
+    let side = 0, safety = 0;
+    while (safety < RAY_SAFETY) {
+      safety++;
+      if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; side = 0; }
+      else { sideDistY += deltaDistY; mapY += stepY; side = 1; }
+      if (mapX < 0 || mapY < 0 || mapX >= GRID || mapY >= GRID || grid[mapY][mapX] === 1) break;
+    }
+
+    const perpDist = Math.max(side === 0 ? (sideDistX - deltaDistX) : (sideDistY - deltaDistY), 0.0001);
+    const isExitWall = mapX === exitCell.gx && mapY === exitCell.gy;
+
+    let wallX = side === 0 ? player.y + perpDist * rayDirY : player.x + perpDist * rayDirX;
+    wallX -= Math.floor(wallX);
+
+    return { perpDist, side, isExitWall, wallX };
+  }
+
+  function shadeColor(shade) {
+    const s = Math.max(0, Math.min(1, shade));
+    const r = Math.round(28 + (150 - 28) * s);
+    const g = Math.round(43 + (168 - 43) * s);
+    const b = Math.round(57 + (184 - 57) * s);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function render() {
+    // Vacillement de torche : deux sinus superposés pour un effet moins mécanique.
+    const flicker = 0.94 + 0.05 * Math.sin(elapsed * 6) + 0.02 * Math.sin(elapsed * 17);
+
+    const stunned = elapsed < stunUntil;
+    // Petite secousse visuelle (angle uniquement, pas la vraie direction du
+    // joueur) pendant l'étourdissement, qui s'atténue en fin d'effet.
+    const shake = stunned ? Math.sin(elapsed * 45) * 0.03 * ((stunUntil - elapsed) / STUN_DURATION) : 0;
+    const viewAngle = player.angle + shake;
+    // "Fake pitch" façon vieux moteurs de raycasting : on décale toute la
+    // ligne d'horizon au lieu de recalculer une vraie perspective 3D.
+    const horizonY = H / 2 + pitch;
+
+    // Sol et plafond en dégradé de profondeur (plus sombres vers l'horizon), sans texture image.
+    const horizon = Math.floor(horizonY);
+    for (let y = 0; y < H; y++) {
+      if (y === horizon) continue;
+      const isFloor = y > horizon;
+      const rowFromCenter = Math.abs(y - horizon);
+      const d = (projPlaneDist * 0.5) / Math.max(rowFromCenter, 1);
+      let shade = Math.max(0.08, 1 - d / 12) * flicker;
+      shade *= isFloor ? 0.55 : 0.38;
+      ctx.fillStyle = shadeColor(shade);
+      ctx.fillRect(0, y, W, 1);
+    }
+
+    for (let col = 0; col < W; col++) {
+      const rayAngle = viewAngle - FOV / 2 + (col / W) * FOV;
+      const { perpDist, side, isExitWall, wallX } = castRay(rayAngle);
+      const lineHeight = Math.min(H * 3, projPlaneDist / perpDist);
+      const drawStart = Math.max(0, horizonY - lineHeight / 2);
+      const drawEnd = Math.min(H, horizonY + lineHeight / 2);
+
+      let shade = Math.max(0.2, 1 - perpDist / 12);
+      if (side === 1) shade *= 0.65;
+      // Bandes verticales façon joints de pierre : simule une texture sans image.
+      if (Math.floor(wallX * 6) % 2 === 0) shade *= 0.85;
+      shade *= flicker;
+
+      ctx.fillStyle = isExitWall ? `rgba(244,180,0,${Math.max(0.4, Math.min(1, shade))})` : shadeColor(shade);
+      ctx.fillRect(col, drawStart, 1, drawEnd - drawStart);
+      zbuffer[col] = perpDist;
+    }
+
+    // Balise verte à la sortie, nommée "Mont Ginov" : colonne de lumière
+    // qui s'élève vers le ciel. Assez haute pour dépasser au-dessus des
+    // murs plus proches : on
+    // ne masque que la portion réellement cachée derrière un mur, le sommet
+    // de la colonne reste visible de loin, comme un phare par-dessus les
+    // toits — c'est ce qui permet de repérer la sortie à distance.
+    {
+      const dx = exit.x - player.x, dy = exit.y - player.y;
+      const dist = Math.hypot(dx, dy);
+      let angleTo = Math.atan2(dy, dx) - viewAngle;
+      while (angleTo > Math.PI) angleTo -= Math.PI * 2;
+      while (angleTo < -Math.PI) angleTo += Math.PI * 2;
+      if (Math.abs(angleTo) <= FOV / 2 + 0.15) {
+        const col = Math.round(((angleTo + FOV / 2) / FOV) * W);
+        if (col >= 0 && col < W) {
+          const beamScale = projPlaneDist / dist;
+          const idealBaseY = horizonY - beamScale * 0.5;
+          const idealTopY = idealBaseY - beamScale * BEACON_HEIGHT;
+
+          const nearestDist = zbuffer[col];
+          const obstructionTopY = horizonY - (projPlaneDist / nearestDist) * 0.5;
+
+          const baseY = Math.min(idealBaseY, obstructionTopY);
+          const topY = Math.max(0, idealTopY);
+
+          if (baseY > topY) {
+            const beamWidth = Math.max(1.5, beamScale * 0.08);
+            const grad = ctx.createLinearGradient(0, topY, 0, baseY);
+            grad.addColorStop(0, 'rgba(60,220,120,0)');
+            grad.addColorStop(1, 'rgba(80,240,140,0.95)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(col - beamWidth / 2, topY, beamWidth, baseY - topY);
+
+            if (baseY - topY > 20) {
+              ctx.fillStyle = '#12e9cc';
+              ctx.font = 'bold 11px "Segoe UI", sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText('Mont Delta', col, Math.max(12, topY + 12));
+            }
+          }
+        }
+      }
+    }
+
+    const visibleCoins = coins
+      .filter((c) => !c.collected)
+      .map((c) => ({ c, dist: Math.hypot(c.x - player.x, c.y - player.y) }))
+      .sort((a, b) => b.dist - a.dist);
+
+    visibleCoins.forEach(({ c, dist }) => {
+      const dx = c.x - player.x, dy = c.y - player.y;
+      let angleTo = Math.atan2(dy, dx) - viewAngle;
+      while (angleTo > Math.PI) angleTo -= Math.PI * 2;
+      while (angleTo < -Math.PI) angleTo += Math.PI * 2;
+      if (Math.abs(angleTo) > FOV / 2 + 0.15) return;
+
+      const col = Math.round(((angleTo + FOV / 2) / FOV) * W);
+      if (col < 0 || col >= W || dist > zbuffer[col]) return;
+
+      const spriteScale = projPlaneDist / dist;
+      const size = Math.max(2, spriteScale * 0.18);
+      const floorY = horizonY + spriteScale / 2;
+
+      ctx.beginPath();
+      ctx.arc(col, floorY - size, size, 0, Math.PI * 2);
+      ctx.fillStyle = '#f4b400';
+      ctx.fill();
+      ctx.strokeStyle = '#1c2b39';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+
+    if (mpActive) {
+      Object.keys(remotePlayers).forEach((id) => {
+        if (elapsed - remotePlayers[id].lastSeen > MP_STALE_S) delete remotePlayers[id];
+      });
+
+      const visiblePlayers = Object.values(remotePlayers)
+        .map((p) => ({ p, dist: Math.hypot(p.x - player.x, p.y - player.y) }))
+        .sort((a, b) => b.dist - a.dist);
+
+      visiblePlayers.forEach(({ p, dist }) => {
+        const dx = p.x - player.x, dy = p.y - player.y;
+        let angleTo = Math.atan2(dy, dx) - viewAngle;
+        while (angleTo > Math.PI) angleTo -= Math.PI * 2;
+        while (angleTo < -Math.PI) angleTo += Math.PI * 2;
+        if (Math.abs(angleTo) > FOV / 2 + 0.15) return;
+
+        const col = Math.round(((angleTo + FOV / 2) / FOV) * W);
+        if (col < 0 || col >= W || dist > zbuffer[col]) return;
+
+        const scale = projPlaneDist / dist;
+        const bodyW = Math.max(2, scale * 0.22);
+        const bodyH = Math.max(4, scale * 0.55);
+        const floorY = horizonY + scale / 2;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(col - bodyW / 2, floorY - bodyH, bodyW, bodyH);
+        ctx.beginPath();
+        ctx.arc(col, floorY - bodyH - bodyW * 0.4, bodyW * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (scale > 40 && p.name) {
+          ctx.fillStyle = '#f4b400';
+          ctx.font = '10px "Segoe UI", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(p.name, col, floorY - bodyH - bodyW * 0.9);
+        }
+
+        if (p.say && elapsed < p.say.until) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 11px "Segoe UI", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(p.say.text, col, floorY - bodyH - bodyW * 1.8);
+        }
+      });
+    }
+
+    if (mpActive) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(W / 2 - 6, H / 2); ctx.lineTo(W / 2 + 6, H / 2);
+      ctx.moveTo(W / 2, H / 2 - 6); ctx.lineTo(W / 2, H / 2 + 6);
+      ctx.stroke();
+
+      if (elapsed < muzzleFlashUntil) {
+        ctx.fillStyle = 'rgba(230,255,250,0.85)';
+        ctx.fillRect(W / 2 - 2, 0, 4, H);
+      }
+    }
+
+    if (stunned) {
+      ctx.fillStyle = `rgba(200,40,40,${0.3 * (stunUntil - elapsed) / STUN_DURATION})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    drawMinimap();
+  }
+
+  function drawMinimap() {
+    const cell = miniCanvas.width / GRID;
+    mctx.fillStyle = 'rgba(28,43,57,0.9)';
+    mctx.fillRect(0, 0, miniCanvas.width, miniCanvas.height);
+
+    for (let y = 0; y < GRID; y++) {
+      for (let x = 0; x < GRID; x++) {
+        if (grid[y][x] === 1 || !revealed[y][x]) continue;
+        mctx.fillStyle = (x === exitCell.gx && y === exitCell.gy) ? '#f4b400' : 'rgba(255,255,255,0.5)';
+        mctx.fillRect(x * cell, y * cell, cell, cell);
+      }
+    }
+
+    coins.forEach((c) => {
+      if (c.collected) return;
+      if (!revealed[Math.round(c.y)][Math.round(c.x)]) return;
+      mctx.fillStyle = '#f4b400';
+      mctx.beginPath();
+      mctx.arc(c.x * cell, c.y * cell, Math.max(1, cell * 0.22), 0, Math.PI * 2);
+      mctx.fill();
+    });
+
+    if (mpActive) {
+      Object.values(remotePlayers).forEach((p) => {
+        const ry = Math.round(p.y), rx = Math.round(p.x);
+        if (ry < 0 || rx < 0 || ry >= GRID || rx >= GRID || !revealed[ry][rx]) return;
+        mctx.fillStyle = 'rgba(255,255,255,0.6)';
+        mctx.beginPath();
+        mctx.arc(p.x * cell, p.y * cell, Math.max(1.5, cell * 0.2), 0, Math.PI * 2);
+        mctx.fill();
+      });
+    }
+
+    mctx.fillStyle = '#ffffff';
+    mctx.beginPath();
+    mctx.arc(player.x * cell, player.y * cell, Math.max(2, cell * 0.28), 0, Math.PI * 2);
+    mctx.fill();
+    mctx.strokeStyle = '#ffffff';
+    mctx.lineWidth = 2;
+    mctx.beginPath();
+    mctx.moveTo(player.x * cell, player.y * cell);
+    mctx.lineTo(player.x * cell + Math.cos(player.angle) * cell * 0.8, player.y * cell + Math.sin(player.angle) * cell * 0.8);
+    mctx.stroke();
+  }
+
+  function update(dt) {
+    const speedFactor = elapsed < stunUntil ? STUN_SPEED_FACTOR : 1;
+    if (inputRotate !== 0) player.angle += inputRotate * ROT_SPEED * speedFactor * dt;
+    if (inputForward !== 0) movePlayer(inputForward * speedFactor, dt);
+    if (inputPitch !== 0) pitch = Math.max(-PITCH_MAX, Math.min(PITCH_MAX, pitch + inputPitch * PITCH_TOUCH_SPEED * speedFactor * dt));
+    revealAround(player.x, player.y);
+
+    coins.forEach((c) => {
+      if (c.collected) return;
+      if (Math.hypot(c.x - player.x, c.y - player.y) < 0.4) {
+        c.collected = true;
+        coinsCollected++;
+        scoreDisplay.textContent = coinsCollected;
+      }
+    });
+
+    if (Math.hypot(exit.x - player.x, exit.y - player.y) < 0.5) finishGame(true);
+  }
+
+  function loop(ts) {
+    if (!running) return;
+    if (lastTs === null) lastTs = ts;
+    let dt = Math.min((ts - lastTs) / 1000, 0.05);
+    lastTs = ts;
+    elapsed += dt;
+
+    update(dt);
+    if (!running) return;
+    render();
+    timeDisplay.textContent = elapsed.toFixed(1) + 's';
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function startGame(diffKey) {
+    if (diffKey) difficulty = DIFFICULTIES[diffKey];
+    ROOMS = difficulty.rooms;
+    GRID = ROOMS * 2 + 1;
+    COIN_COUNT = difficulty.coins;
+
+    generateMaze();
+
+    exitCell = { gx: (ROOMS - 1) * 2 + 1, gy: (ROOMS - 1) * 2 + 1 };
+    exit = { x: exitCell.gx + 0.5, y: exitCell.gy + 0.5 };
+    player = { x: 1.5, y: 1.5, angle: Math.atan2(exit.y - 1.5, exit.x - 1.5) };
+
+    revealed = Array.from({ length: GRID }, () => Array(GRID).fill(false));
+    revealAround(player.x, player.y);
+
+    const openCells = [];
+    for (let y = 0; y < GRID; y++) {
+      for (let x = 0; x < GRID; x++) {
+        if (grid[y][x] === 0) openCells.push({ gx: x, gy: y });
+      }
+    }
+    for (let i = openCells.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [openCells[i], openCells[j]] = [openCells[j], openCells[i]];
+    }
+
+    coins = [];
+    for (const cell of openCells) {
+      if (coins.length >= COIN_COUNT) break;
+      if (cell.gx === exitCell.gx && cell.gy === exitCell.gy) continue;
+      if (Math.hypot(cell.gx - 1, cell.gy - 1) < 2) continue;
+      coins.push({ x: cell.gx + 0.5, y: cell.gy + 0.5, collected: false });
+    }
+
+    coinsCollected = 0;
+    elapsed = 0;
+    lastTs = null;
+    pitch = 0;
+    stunUntil = -999;
+    muzzleFlashUntil = -999;
+    lastShotTime = -999;
+    // Remise à zéro explicite : si une touche/bouton avait été relâché en
+    // dehors de la page (ex. alt-tab) lors de la partie précédente, l'état
+    // "en mouvement" pouvait rester bloqué et faire avancer le joueur tout
+    // seul dès le lancement de la partie suivante.
+    inputForward = 0;
+    inputRotate = 0;
+    inputPitch = 0;
+    scoreDisplay.textContent = '0';
+    timeDisplay.textContent = '0.0s';
+
+    overlay.classList.add('hidden');
+    endBtn.classList.remove('hidden');
+    running = true;
+    render();
+    drawMinimap();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  async function finishGame(reachedExit) {
+    running = false;
+    cancelAnimationFrame(rafId);
+    endBtn.classList.add('hidden');
+    const wasMultiplayer = mpActive;
+    leaveRealtimeRoom();
+    mpActive = false;
+    mpHud.classList.add('hidden');
+    btnFire.classList.add('hidden');
+    btnChat.classList.add('hidden');
+    chatMenu.classList.add('hidden');
+    chatStatus.classList.add('hidden');
+
+    const timeBonusMax = ROOMS * 30;
+    const decayRate = ROOMS * 1.2;
+    const timeBonus = reachedExit ? Math.max(0, Math.round(timeBonusMax - elapsed * decayRate)) : 0;
+    const finalScore = coinsCollected * 10 + timeBonus;
+
+    const user = await Leaderboard.getCurrentUser();
+    const playerName = user ? (user.email || 'Joueur connecté') : (prompt('Ton pseudo pour le classement :') || 'Anonyme');
+    await Leaderboard.submitScore(GAME_SLUG, playerName, finalScore);
+    await refreshLeaderboard();
+
+    const modeLabel = wasMultiplayer ? 'Multijoueur (Difficile)' : difficulty.label;
+    overlayTitle.textContent = reachedExit ? 'Sortie trouvée !' : 'Partie abandonnée';
+    overlayText.textContent = (reachedExit
+      ? `${coinsCollected} point(s) collecté(s), bonus de rapidité inclus. Score : ${finalScore}.`
+      : `${coinsCollected} point(s) collecté(s). Score : ${finalScore}.`) + ` Mode : ${modeLabel}. Choisis une difficulté pour rejouer :`;
+    overlay.classList.remove('hidden');
+  }
+
+  diffBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      mpActive = false;
+      mpHud.classList.add('hidden');
+      btnFire.classList.add('hidden');
+      btnChat.classList.add('hidden');
+      chatMenu.classList.add('hidden');
+      chatStatus.classList.add('hidden');
+      leaveRealtimeRoom();
+      rand = Math.random;
+      startGame(btn.dataset.diff);
+    });
+  });
+  mpBtn.addEventListener('click', startMultiplayer);
+  endBtn.addEventListener('click', () => finishGame(false));
+  window.addEventListener('beforeunload', leaveRealtimeRoom);
+
+  // Si la fenêtre perd le focus (changement d'onglet, alt-tab) pendant
+  // qu'une touche ou un bouton tactile est maintenu, l'événement de
+  // relâchement peut ne jamais arriver à la page : on coupe les entrées
+  // par sécurité pour éviter un déplacement "fantôme" au retour.
+  window.addEventListener('blur', () => {
+    inputForward = 0;
+    inputRotate = 0;
+    inputPitch = 0;
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') inputForward = 1;
+    else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') inputForward = -1;
+    else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') inputRotate = -1;
+    else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') inputRotate = 1;
+    else if (e.key === ' ' && !e.repeat) { e.preventDefault(); fire(); }
+    else if (mpActive && /^[1-6]$/.test(e.key)) sendQuickMessage(QUICK_MESSAGES[Number(e.key) - 1]);
+  });
+  window.addEventListener('keyup', (e) => {
+    if (['ArrowUp', 'w', 'W', 'ArrowDown', 's', 'S'].includes(e.key)) inputForward = 0;
+    else if (['ArrowLeft', 'a', 'A', 'ArrowRight', 'd', 'D'].includes(e.key)) inputRotate = 0;
+  });
+
+  // Molette de la souris : regarder en haut/bas ("fake pitch", voir render()).
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    pitch = Math.max(-PITCH_MAX, Math.min(PITCH_MAX, pitch - e.deltaY * PITCH_WHEEL_SENS));
+  }, { passive: false });
+
+  canvas.addEventListener('click', fire);
+
+  function bindHold(el, onDown, onUp) {
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); onDown(); });
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointerleave', onUp);
+    el.addEventListener('pointercancel', onUp);
+  }
+  bindHold(btnForward, () => { inputForward = 1; }, () => { if (inputForward === 1) inputForward = 0; });
+  bindHold(btnLeft, () => { inputRotate = -1; }, () => { if (inputRotate === -1) inputRotate = 0; });
+  bindHold(btnRight, () => { inputRotate = 1; }, () => { if (inputRotate === 1) inputRotate = 0; });
+  bindHold(btnLookUp, () => { inputPitch = 1; }, () => { if (inputPitch === 1) inputPitch = 0; });
+  bindHold(btnLookDown, () => { inputPitch = -1; }, () => { if (inputPitch === -1) inputPitch = 0; });
+  btnFire.addEventListener('click', fire);
+  btnChat.addEventListener('click', () => chatMenu.classList.toggle('hidden'));
+  chatMsgBtns.forEach((btn) => btn.addEventListener('click', () => sendQuickMessage(btn.dataset.msg)));
+
+  // --- Connexion optionnelle + classement ---
+
+  function renderAuthBox(user) {
+    const authBox = document.getElementById('authBox');
+    if (user) {
+      authBox.innerHTML = `<span>${user.email}</span> <button id="signOutBtn" type="button">Déconnexion</button>`;
+      document.getElementById('signOutBtn').addEventListener('click', () => Leaderboard.signOut());
+      return;
+    }
+    authBox.innerHTML = `
+      <input id="authEmail" type="email" placeholder="Email pour garder ton score" />
+      <button id="signInBtn" type="button">Connexion</button>
+    `;
+    document.getElementById('signInBtn').addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      if (!email) return;
+      const result = await Leaderboard.signInWithEmail(email);
+      authBox.innerHTML = result.success
+        ? '<span>Vérifie ta boîte mail pour le lien de connexion.</span>'
+        : `<span>${result.message}</span>`;
+    });
+  }
+
+  async function refreshLeaderboard() {
+    const scores = await Leaderboard.getTopScores(GAME_SLUG);
+    const list = document.getElementById('leaderboardList');
+    list.innerHTML = scores.length
+      ? scores.map((row) => `<li>${row.player_name} — ${row.score}</li>`).join('')
+      : '<li class="leaderboard-empty">Aucun score pour l\'instant, sois le premier !</li>';
+  }
+
+  Leaderboard.onAuthChange(renderAuthBox);
+  Leaderboard.getCurrentUser().then(renderAuthBox);
+  refreshLeaderboard();
+})();
+</script>
+
+</body>
+</html>

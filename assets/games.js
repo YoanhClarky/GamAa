@@ -13,6 +13,14 @@
 */
 var GAMES = [
   {
+    "title": "Vise 100",
+    "type": "Arcade",
+    "description": "Une phrase courte qui donne envie de jouer.",
+    "dev": "DARKSOUL",
+    "date": "12/08/2026",
+    "href": "games/DARKSOUL/vise-100.html"
+  },
+  {
     "title": "Corporate Dodger",
     "type": "Arcade",
     "description": "Esquive les obstacles et reste concentré.",
@@ -25,8 +33,16 @@ var GAMES = [
     "type": "Course",
     "description": "Un parcours rapide à travers les contraintes du quotidien.",
     "dev": "Yoanh Mantele",
-    "date": "12/08/2026",
+    "date": "11/08/2026",
     "href": "games/yoanh-mantele/en-route-boulot-libre.html"
+  },
+  {
+    "title": "Le Dédale",
+    "type": "Exploration",
+    "description": "Choisis ta difficulté et explore en solo ou en temps réel avec d'autres joueurs un labyrinthe en fausse 3D, façon donjon éclairé à la torche.",
+    "dev": "Yoanh Mantele",
+    "date": "16/08/2026",
+    "href": "games/yoanh-mantele/le-dedale.html"
   },
   {
     "title": "Le Délestage",
@@ -45,6 +61,14 @@ var GAMES = [
     "href": "games/yoanh-mantele/reproduis-la-forme.html"
   },
   {
+    "title": "Trace ta Piste",
+    "type": "Simulation",
+    "description": "Dessine ta propre piste, lâche la bille et regarde-la dévaler la pente avec une vraie gravité.",
+    "dev": "Yoanh Mantele",
+    "date": "16/08/2026",
+    "href": "games/yoanh-mantele/trace-ta-piste.html"
+  },
+  {
     "title": "Vise 100",
     "type": "Réflexe",
     "description": "Arrête le chrono le plus près possible de 100.",
@@ -55,6 +79,20 @@ var GAMES = [
 ];
 
 var CONTRIBUTORS = [
+  {
+    "slug": "DARKSOUL",
+    "name": "DARKSOUL",
+    "bio": "Je suis DARKSOUL",
+    "links": {
+      "github": "https://...",
+      "site": "https://...",
+      "twitter": "https://...",
+      "linkedin": "https://..."
+    },
+    "games": [
+      "Vise 100"
+    ]
+  },
   {
     "slug": "yoanh-mantele",
     "name": "Yoanh Mantele",
@@ -68,8 +106,10 @@ var CONTRIBUTORS = [
     "games": [
       "Corporate Dodger",
       "En Route pour le Boulot",
+      "Le Dédale",
       "Le Délestage",
       "Reproduis la Forme",
+      "Trace ta Piste",
       "Vise 100"
     ]
   }
