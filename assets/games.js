@@ -13,14 +13,6 @@
 */
 var GAMES = [
   {
-    "title": "Vise 100",
-    "type": "Arcade",
-    "description": "Une phrase courte qui donne envie de jouer.",
-    "dev": "DARKSOUL",
-    "date": "12/08/2026",
-    "href": "games/DARKSOUL/vise-100.html"
-  },
-  {
     "title": "Corporate Dodger",
     "type": "Arcade",
     "description": "Esquive les obstacles et reste concentré.",
@@ -79,20 +71,6 @@ var GAMES = [
 ];
 
 var CONTRIBUTORS = [
-  {
-    "slug": "DARKSOUL",
-    "name": "DARKSOUL",
-    "bio": "Je suis DARKSOUL",
-    "links": {
-      "github": "https://...",
-      "site": "https://...",
-      "twitter": "https://...",
-      "linkedin": "https://..."
-    },
-    "games": [
-      "Vise 100"
-    ]
-  },
   {
     "slug": "yoanh-mantele",
     "name": "Yoanh Mantele",
